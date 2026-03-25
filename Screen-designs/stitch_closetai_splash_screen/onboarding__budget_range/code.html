@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ClosetAI Onboarding</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#e42545",
+              "background-light": "#f8f6f6",
+              "background-dark": "#211114",
+              "glass-border": "rgba(255, 255, 255, 0.4)",
+              "glass-bg": "rgba(255, 255, 255, 0.6)",
+              "glass-bg-dark": "rgba(30, 30, 30, 0.6)",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+            boxShadow: {
+                'glass': '0 4px 30px rgba(0, 0, 0, 0.05)',
+                'glass-hover': '0 10px 40px rgba(228, 37, 69, 0.15)',
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        /* Custom styles for radio button interactions */
+        .radio-card:has(input:checked) {
+            border-color: #e42545;
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 10px 25px -5px rgba(228, 37, 69, 0.15), 0 8px 10px -6px rgba(228, 37, 69, 0.1);
+        }
+        .dark .radio-card:has(input:checked) {
+            background-color: rgba(50, 20, 30, 0.6);
+            border-color: #e42545;
+        }
+        
+        /* Smooth backdrop blur animation */
+        .radio-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-[#1b0e10] dark:text-[#fbf8f9] font-display antialiased min-h-screen relative overflow-hidden flex flex-col items-center">
+<!-- Background Decoration (Abstract fashion blobs) -->
+<div class="fixed top-[-15%] right-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] pointer-events-none mix-blend-multiply dark:mix-blend-screen animate-pulse duration-700" data-alt="Abstract soft red gradient background blob"></div>
+<div class="fixed bottom-[-10%] left-[-20%] w-[350px] h-[350px] bg-[#e6d0d4]/40 dark:bg-primary/5 rounded-full blur-[80px] pointer-events-none mix-blend-multiply dark:mix-blend-screen" data-alt="Abstract soft pink gradient background blob"></div>
+<!-- Main Content Container -->
+<main class="relative z-10 w-full max-w-md px-6 py-6 flex flex-col h-screen max-h-[900px]">
+<!-- Navigation / Back -->
+<div class="flex items-center justify-between mb-6">
+<button class="text-gray-400 hover:text-primary transition-colors p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+</button>
+<div class="text-xs font-medium tracking-widest text-gray-500 uppercase">Step 3 of 5</div>
+<div class="w-10"></div> <!-- Spacer for centering -->
+</div>
+<!-- Progress Indicators -->
+<div class="flex w-full flex-row items-center justify-center gap-2 mb-8">
+<div class="h-1.5 w-8 rounded-full bg-primary/20"></div>
+<div class="h-1.5 w-8 rounded-full bg-primary/20"></div>
+<div class="h-1.5 w-8 rounded-full bg-primary"></div>
+<div class="h-1.5 w-8 rounded-full bg-primary/20"></div>
+<div class="h-1.5 w-8 rounded-full bg-primary/20"></div>
+</div>
+<!-- Header Text -->
+<div class="text-center mb-8">
+<h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-3 text-slate-900 dark:text-white leading-tight">
+                Curate your closet.
+            </h1>
+<p class="text-base text-slate-500 dark:text-slate-400 font-normal leading-relaxed max-w-[280px] mx-auto">
+                Select a budget range to help our AI suggest the perfect pieces for you.
+            </p>
+</div>
+<!-- Budget Selection Cards -->
+<div class="flex flex-col gap-4 flex-grow" style="--radio-dot-svg: url('data:image/svg+xml,%3csvg viewBox=%270 0 16 16%27 fill=%27rgb(228,37,69)%27 xmlns=%27http://www.w3.org/2000/svg%27%3e%3ccircle cx=%278%27 cy=%278%27 r=%273%27/%3e%3c/svg%3e');">
+<!-- Option 1: Essentials -->
+<label class="radio-card group relative flex items-center gap-4 rounded-2xl border border-white/50 dark:border-white/10 bg-glass-bg dark:bg-glass-bg-dark backdrop-blur-xl p-5 shadow-glass cursor-pointer hover:border-primary/30 dark:hover:border-primary/30">
+<input checked="" class="peer sr-only" name="budget" type="radio"/>
+<!-- Custom Check Circle -->
+<div class="h-6 w-6 shrink-0 rounded-full border-2 border-gray-300 dark:border-gray-600 peer-checked:border-primary flex items-center justify-center transition-colors">
+<div class="h-3 w-3 rounded-full bg-primary opacity-0 peer-checked:opacity-100 transition-opacity transform scale-0 peer-checked:scale-100"></div>
+</div>
+<!-- Icon -->
+<div class="h-10 w-10 shrink-0 rounded-full bg-primary/5 text-primary flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined">checkroom</span>
+</div>
+<div class="flex flex-col grow">
+<div class="flex justify-between items-center w-full">
+<span class="text-slate-900 dark:text-white font-semibold text-base">Essentials</span>
+<span class="text-xs font-bold bg-gray-100 dark:bg-white/10 px-2 py-1 rounded-md text-slate-600 dark:text-slate-300">$0 - $100</span>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm mt-0.5">Everyday staples &amp; basic wear</p>
+</div>
+</label>
+<!-- Option 2: Premium -->
+<label class="radio-card group relative flex items-center gap-4 rounded-2xl border border-white/50 dark:border-white/10 bg-glass-bg dark:bg-glass-bg-dark backdrop-blur-xl p-5 shadow-glass cursor-pointer hover:border-primary/30 dark:hover:border-primary/30">
+<input class="peer sr-only" name="budget" type="radio"/>
+<div class="h-6 w-6 shrink-0 rounded-full border-2 border-gray-300 dark:border-gray-600 peer-checked:border-primary flex items-center justify-center transition-colors">
+<div class="h-3 w-3 rounded-full bg-primary opacity-0 peer-checked:opacity-100 transition-opacity transform scale-0 peer-checked:scale-100"></div>
+</div>
+<div class="h-10 w-10 shrink-0 rounded-full bg-primary/5 text-primary flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined">stars</span>
+</div>
+<div class="flex flex-col grow">
+<div class="flex justify-between items-center w-full">
+<span class="text-slate-900 dark:text-white font-semibold text-base">Premium</span>
+<span class="text-xs font-bold bg-gray-100 dark:bg-white/10 px-2 py-1 rounded-md text-slate-600 dark:text-slate-300">$100 - $500</span>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm mt-0.5">Quality investment pieces</p>
+</div>
+</label>
+<!-- Option 3: Luxury -->
+<label class="radio-card group relative flex items-center gap-4 rounded-2xl border border-white/50 dark:border-white/10 bg-glass-bg dark:bg-glass-bg-dark backdrop-blur-xl p-5 shadow-glass cursor-pointer hover:border-primary/30 dark:hover:border-primary/30">
+<input class="peer sr-only" name="budget" type="radio"/>
+<div class="h-6 w-6 shrink-0 rounded-full border-2 border-gray-300 dark:border-gray-600 peer-checked:border-primary flex items-center justify-center transition-colors">
+<div class="h-3 w-3 rounded-full bg-primary opacity-0 peer-checked:opacity-100 transition-opacity transform scale-0 peer-checked:scale-100"></div>
+</div>
+<div class="h-10 w-10 shrink-0 rounded-full bg-primary/5 text-primary flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined">diamond</span>
+</div>
+<div class="flex flex-col grow">
+<div class="flex justify-between items-center w-full">
+<span class="text-slate-900 dark:text-white font-semibold text-base">Luxury</span>
+<span class="text-xs font-bold bg-gray-100 dark:bg-white/10 px-2 py-1 rounded-md text-slate-600 dark:text-slate-300">$500+</span>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm mt-0.5">High-end designer wear</p>
+</div>
+</label>
+</div>
+<!-- Footer Actions -->
+<div class="mt-auto pt-6 flex flex-col gap-4">
+<button class="w-full h-14 bg-primary hover:bg-[#c91e3b] text-white text-lg font-bold rounded-xl shadow-lg shadow-primary/20 transition-all transform active:scale-[0.98] flex items-center justify-center tracking-wide">
+                Continue
+            </button>
+<button class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors pb-2">
+                Skip for now
+            </button>
+</div>
+</main>
+</body></html>

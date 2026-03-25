@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">ClosetAI</string>
+    <string name="default_web_client_id" translatable="false">463221258234-f71fte40203vk0d2a6cffaho70evfq0d.apps.googleusercontent.com</string>
+</resources>

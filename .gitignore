@@ -1,0 +1,73 @@
+# ClosetAI .gitignore (root)
+
+# IDE / Editors
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.iml
+.idea/
+.vscode/
+
+.env
+# Cursor / local agent state
+.cursor/
+agent-transcripts/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Android / Gradle
+**/build/
+**/.gradle/
+**/.kotlin/
+local.properties
+
+*.apk
+*.aab
+*.ap_
+*.dex
+
+*.jks
+*.keystore
+*.hprof
+
+# Firebase / Google services (usually project-specific secrets)
+**/google-services.json
+**/google-services-*.json
+
+# Python / FastAPI
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+**/venv/
+**/.venv/
+
+**/.pytest_cache/
+
+*.env
+**/.env
+backend/.env
+
+# Logs / databases
+*.log
+*.sqlite3
+
+# Backend generated/test artifacts
+backend/*.json
+backend/*.html
+
+# Large generated images
+imagy_images_*/
+
+# Misc local files
+error.txt
+Wardrobe.json

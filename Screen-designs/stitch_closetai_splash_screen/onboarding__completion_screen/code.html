@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ClosetAI - Onboarding Complete</title>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#e42545",
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#211114",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark antialiased">
+<div class="relative flex h-screen w-full flex-col overflow-hidden">
+<!-- Abstract Background Visuals -->
+<!-- Using a blurred fashion abstract background to give depth -->
+<div class="absolute top-0 left-0 w-full h-[60%] z-0 pointer-events-none opacity-30 dark:opacity-20">
+<div class="w-full h-full bg-cover bg-center blur-3xl" data-alt="Abstract soft fashion fabric textures and gradients" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAwT8TT-hehoc7pq5wMUDasOrgeK4haer2TzApkk3sreCtFv3s1CpjSs6I_47z-MWnbgkbzb5LdNuz5b579Lzds07rTmq4w5reVE1OB7CMq1peofvw-3T1LgP971NjMbnh9ZqyqkqOvztuOkXMLHUtQltMafH5i8qwzQ2kgJF7jbNNI8IpIjBwyRMT6ReiWD4chWt8pLuxfklBnohZWaZBVvGF6WAwyjiry3toZg1L48ePGHv7r5OAu0WrejUQpz_7DDK2o_aovQMcg');">
+</div>
+<div class="absolute inset-0 bg-gradient-to-b from-transparent to-background-light dark:to-background-dark"></div>
+</div>
+<!-- Top Bar -->
+<!-- Keeping it minimal and transparent as requested -->
+<div class="relative z-10 flex items-center p-4 justify-end">
+<button class="flex size-10 items-center justify-center rounded-full bg-white/50 dark:bg-black/20 backdrop-blur-sm text-neutral-800 dark:text-neutral-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-[24px]">close</span>
+</button>
+</div>
+<!-- Main Content Area -->
+<div class="relative z-10 flex flex-1 flex-col justify-center items-center px-6 pb-20 text-center">
+<!-- Success Icon -->
+<div class="mb-10 flex items-center justify-center">
+<div class="relative flex h-32 w-32 items-center justify-center rounded-full bg-white dark:bg-neutral-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-primary/10">
+<div class="absolute inset-0 rounded-full bg-primary/5"></div>
+<span class="material-symbols-outlined text-[64px] text-primary" style="font-variation-settings: 'wght' 600;">check_circle</span>
+</div>
+</div>
+<!-- Text Content -->
+<div class="max-w-md space-y-4">
+<h1 class="text-neutral-900 dark:text-white text-[32px] font-black leading-tight tracking-tight">
+                    You're all set!
+                </h1>
+<p class="text-neutral-500 dark:text-neutral-400 text-lg font-normal leading-relaxed">
+                    Your wardrobe is now digitized.<br/>Let's find your perfect look.
+                </p>
+</div>
+<!-- Optional: Small visual indicator of steps completed could go here, but keeping it clean per request -->
+</div>
+<!-- Bottom Action Area -->
+<div class="relative z-20 px-6 pb-8 pt-4">
+<!-- Glassmorphic Button -->
+<!-- Using backdrop-blur and semi-transparent backgrounds to achieve the 'high-end' glass look requested -->
+<button class="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl bg-primary/10 dark:bg-primary/20 px-6 py-4 backdrop-blur-xl border border-primary/20 shadow-lg shadow-primary/10 transition-all active:scale-[0.98] hover:bg-primary/15 dark:hover:bg-primary/25">
+<span class="text-primary text-lg font-bold tracking-wide">Start Exploring</span>
+<span class="material-symbols-outlined text-primary transition-transform group-hover:translate-x-1" style="font-size: 20px;">arrow_forward</span>
+</button>
+<div class="mt-6 h-1 w-1/3 mx-auto rounded-full bg-neutral-200 dark:bg-neutral-800"></div>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ClosetAI Splash Screen</title>
+<!-- Material Symbols Link (CRITICAL) -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter and Playfair Display for the fashion aesthetic -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Config -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#e42545",
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#211114",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "serif": ["Playfair Display", "serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                    backgroundImage: {
+                        'fabric-gradient': "linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(248,246,246,0.5) 50%, rgba(228, 37, 69, 0.03) 100%)",
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-background-dark dark:text-white antialiased overflow-hidden selection:bg-primary/20">
+<!-- Main Container -->
+<div class="relative flex h-screen w-full flex-col items-center justify-between overflow-hidden">
+<!-- Abstract Background Texture Elements -->
+<!-- Simulating a fabric sheen using large blurred gradients -->
+<div class="absolute -top-[20%] -left-[10%] w-[140%] h-[60%] rounded-[100%] bg-gradient-to-b from-white to-transparent opacity-60 blur-3xl dark:opacity-10 pointer-events-none"></div>
+<div class="absolute top-[40%] -right-[20%] w-[80%] h-[80%] rounded-full bg-primary/5 blur-3xl pointer-events-none"></div>
+<div class="absolute inset-0 bg-fabric-gradient dark:bg-none pointer-events-none mix-blend-soft-light"></div>
+<!-- Top Spacer (Status Bar Area) -->
+<div class="h-12 w-full shrink-0"></div>
+<!-- Central Content: Logo Lockup -->
+<div class="relative z-10 flex flex-col items-center justify-center flex-1 w-full px-8 animate-fade-in">
+<!-- Logo Container -->
+<div class="flex flex-col items-center gap-6">
+<!-- Icon/Symbol (Optional, keeping it purely typographic as per request, but adding a subtle graphic element) -->
+<div class="mb-4 text-primary opacity-0">
+<!-- Placeholder to ensure spacing if an icon is added later -->
+</div>
+<!-- Typographic Logo -->
+<div class="flex items-baseline tracking-tight">
+<span class="font-serif text-5xl md:text-6xl font-semibold text-[#1b0e10] dark:text-white tracking-tight">Closet</span>
+<span class="font-display text-5xl md:text-6xl font-bold text-primary ml-1">AI</span>
+<!-- Accent Dot -->
+<div class="h-2 w-2 rounded-full bg-primary mb-2 ml-1"></div>
+</div>
+<!-- Subtle Decorative Line / "Loader" -->
+<div class="mt-8 h-0.5 w-12 rounded-full bg-gradient-to-r from-transparent via-primary/40 to-transparent"></div>
+</div>
+</div>
+<!-- Footer -->
+<div class="relative z-10 pb-12 w-full flex flex-col items-center">
+<!-- Meta Text Component Styled -->
+<p class="text-[#964f5b] dark:text-primary/70 text-[10px] uppercase tracking-[0.2em] font-medium leading-normal text-center opacity-80">
+                Powered by Fashion Intelligence
+            </p>
+</div>
+</div>
+</body></html>

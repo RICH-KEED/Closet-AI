@@ -1,0 +1,78 @@
+package com.closetai.app.data.model
+
+import com.google.firebase.Timestamp
+
+data class User(
+    val uid: String = "",
+    val name: String = "",
+    val email: String = "",
+    val gender: String = "",
+    val genderOther: String = "",
+    val bodyType: String = "",
+    val clothingSize: String = "",
+    val height: String = "",
+    val weight: String = "",
+    val chestBust: String = "",
+    val waist: String = "",
+    val hip: String = "",
+    val inseam: String = "",
+    val skinTone: String = "",
+    val undertone: String = "",
+    val favoriteColors: List<String> = emptyList(),
+    val styles: List<String> = emptyList(),
+    val fitPreference: String = "",
+    val coveragePreference: String = "",
+    val occasions: List<String> = emptyList(),
+    val lifestyle: String = "",
+    val climate: String = "",
+    val budget: String = "",
+    val brandAttitude: String = "",
+    val sustainability: String = "",
+    val comfortFabric: List<String> = emptyList(),
+    val functionalFeatures: List<String> = emptyList(),
+    val culturalNeeds: List<String> = emptyList(),
+    val accessibilityNeeds: List<String> = emptyList(),
+    val clothingStyleTypes: List<String> = emptyList(),
+    val garmentTypes: List<String> = emptyList(),
+    val onboardingCompleted: Boolean = false,
+    val createdAt: Timestamp = Timestamp.now()
+) {
+    // No-argument constructor for Firestore
+    constructor() : this(uid = "")
+    
+    fun toMap(): Map<String, Any?> = mapOf(
+        "uid" to uid,
+        "name" to name,
+        "email" to email,
+        "gender" to gender,
+        "genderOther" to genderOther,
+        "bodyType" to bodyType,
+        "clothingSize" to clothingSize,
+        "height" to height,
+        "weight" to weight,
+        "chestBust" to chestBust,
+        "waist" to waist,
+        "hip" to hip,
+        "inseam" to inseam,
+        "skinTone" to skinTone,
+        "undertone" to undertone,
+        "favoriteColors" to favoriteColors,
+        "styles" to styles,
+        "fitPreference" to fitPreference,
+        "coveragePreference" to coveragePreference,
+        "occasions" to occasions,
+        "lifestyle" to lifestyle,
+        "climate" to climate,
+        "budget" to budget,
+        "brandAttitude" to brandAttitude,
+        "sustainability" to sustainability,
+        "comfortFabric" to comfortFabric,
+        "functionalFeatures" to functionalFeatures,
+        "culturalNeeds" to culturalNeeds,
+        "accessibilityNeeds" to accessibilityNeeds,
+        "clothingStyleTypes" to clothingStyleTypes,
+        "garmentTypes" to garmentTypes,
+        "onboardingCompleted" to onboardingCompleted,
+        "createdAt" to createdAt
+    )
+}
