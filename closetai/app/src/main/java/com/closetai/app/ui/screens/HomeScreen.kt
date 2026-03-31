@@ -35,7 +35,8 @@ fun HomeScreen(
     onSignOut: () -> Unit,
     onOpenSettings: () -> Unit,
     onViewRecommendations: (Map<String, String>) -> Unit,
-    onNavigateToWardrobe: () -> Unit
+    onNavigateToWardrobe: () -> Unit,
+    onNavigateToTryOns: () -> Unit
 ) {
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
@@ -103,6 +104,12 @@ fun HomeScreen(
                     label = { Text("Wardrobe") },
                     selected = false,
                     onClick = onNavigateToWardrobe
+                )
+                NavigationBarItem(
+                    icon = { Text("✨") },
+                    label = { Text("Try-ons") },
+                    selected = false,
+                    onClick = onNavigateToTryOns
                 )
             }
         }

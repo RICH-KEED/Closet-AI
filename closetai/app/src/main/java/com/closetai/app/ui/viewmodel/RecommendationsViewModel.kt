@@ -1,5 +1,6 @@
 package com.closetai.app.ui.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.closetai.app.data.model.ProductRecommendation
@@ -9,6 +10,7 @@ import com.closetai.app.data.model.toBackendUserProfile
 import com.closetai.app.data.repository.RecommenderRepository
 import com.closetai.app.data.repository.UserRepository
 import com.closetai.app.data.repository.WardrobeRepository
+import com.closetai.app.data.settings.RecommendationsCacheStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +31,7 @@ sealed class RecommendationsUiState {
 }
 
 class RecommendationsViewModel(
+    private val appContext: Context,
     private val userRepository: UserRepository,
     private val recommenderRepository: RecommenderRepository,
     private val wardrobeRepository: WardrobeRepository = WardrobeRepository()
@@ -46,15 +49,25 @@ class RecommendationsViewModel(
     fun fetchRecommendations(contextParams: Map<String, String>? = null) {
         lastContextParams = contextParams
         viewModelScope.launch {
-            _uiState.value = RecommendationsUiState.Loading()
-            offset = 0
-            isLoadingMore = false
-            
             val user = userRepository.getCurrentUser()
             if (user == null) {
                 _uiState.value = RecommendationsUiState.Error("User not found or not logged in.")
                 return@launch
             }
+
+            // 1) Show cached results instantly (device cache), then refresh from network.
+            val cached = RecommendationsCacheStore.get(appContext, user.uid, contextParams)
+            if (cached.isNotEmpty()) {
+                _uiState.value = RecommendationsUiState.Success(
+                    recommendations = cached,
+                    isLoadingMore = false,
+                    canLoadMore = true
+                )
+            } else {
+                _uiState.value = RecommendationsUiState.Loading()
+            }
+            offset = 0
+            isLoadingMore = false
 
             // Fetch user's Virtual Wardrobe items to send to the backend
             val wardrobeResult = wardrobeRepository.fetchWardrobeItems()
@@ -76,6 +89,8 @@ class RecommendationsViewModel(
                     isLoadingMore = false,
                     canLoadMore = canLoadMore
                 )
+                // Persist latest list to device cache.
+                RecommendationsCacheStore.set(appContext, user.uid, contextParams, recommendations)
             }.onFailure { exception ->
                 _uiState.value = RecommendationsUiState.Error(exception.localizedMessage ?: "Failed to fetch recommendations")
             }
@@ -124,6 +139,8 @@ class RecommendationsViewModel(
                     isLoadingMore = false,
                     canLoadMore = canLoadMore
                 )
+                // Update device cache with combined list.
+                RecommendationsCacheStore.set(appContext, user.uid, lastContextParams, combined)
             }.onFailure { exception ->
                 isLoadingMore = false
                 _uiState.value = current.copy(

@@ -34,7 +34,9 @@ fun WardrobeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val isUploading by viewModel.isUploading.collectAsState()
+    val uploadMessage by viewModel.uploadMessage.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // Launcher for selecting an image from the gallery
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -54,6 +56,7 @@ fun WardrobeScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { galleryLauncher.launch("image/*") },
@@ -166,6 +169,12 @@ fun WardrobeScreen(
         }
     }
 
+    LaunchedEffect(uploadMessage) {
+        val msg = uploadMessage ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(msg)
+        viewModel.consumeUploadMessage()
+    }
+
     if (showAddDialog && selectedImageUri != null) {
         var category by remember { mutableStateOf("") }
         var color by remember { mutableStateOf("") }
@@ -204,7 +213,8 @@ fun WardrobeScreen(
                                 }
                             }
                         }
-                    }
+                    },
+                    enabled = !isUploading
                 ) {
                     Text("Upload")
                 }

@@ -23,6 +23,7 @@ import com.closetai.app.ui.screens.onboarding.SpecialRequirementsScreen
 import com.closetai.app.ui.screens.onboarding.StylePreferenceScreen
 import com.closetai.app.ui.screens.RecommendationsScreen
 import com.closetai.app.ui.screens.SavedScreen
+import com.closetai.app.ui.screens.TryOnsScreen
 import com.closetai.app.ui.screens.WardrobeScreen
 import com.closetai.app.ui.viewmodel.OnboardingViewModel
 import com.closetai.app.ui.viewmodel.RecommendationsViewModel
@@ -196,6 +197,9 @@ fun NavGraph(
                     navController.navigate(Screen.Wardrobe.route) {
                         popUpTo(Screen.Home.route) { inclusive = false }
                     }
+                },
+                onNavigateToTryOns = {
+                    navController.navigate(Screen.TryOns.route)
                 }
             )
         }
@@ -220,9 +224,10 @@ fun NavGraph(
         
         composable(Screen.Recommendations.route) { backStackEntry ->
             val contextParams = navController.previousBackStackEntry?.savedStateHandle?.get<Map<String, String>>("contextParams")
+            val ctx = androidx.compose.ui.platform.LocalContext.current
             
             val recommendationsViewModel: RecommendationsViewModel = viewModel(
-                factory = RecommendationsViewModelFactory()
+                factory = RecommendationsViewModelFactory(ctx)
             )
             
             // Pass context params explicitly if we want the ViewModel to use them immediately
@@ -235,6 +240,10 @@ fun NavGraph(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateSaved = { navController.navigate(Screen.Saved.route) }
             )
+        }
+
+        composable(Screen.TryOns.route) {
+            TryOnsScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Screen.Saved.route) {

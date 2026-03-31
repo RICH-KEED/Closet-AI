@@ -4,21 +4,21 @@ import android.content.Context
 
 object TryOnUserImageStore {
     private const val PREFS_NAME = "closetai_tryon"
-    private const val KEY_USER_IMAGE_URI = "user_image_uri"
+    private const val KEY_USER_IMAGE_PATH = "user_image_path"
 
-    fun getUserImageUri(context: Context): String? {
+    fun getUserImagePath(context: Context): String? {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_USER_IMAGE_URI, null)
+        return prefs.getString(KEY_USER_IMAGE_PATH, null)
     }
 
-    fun setUserImageUri(context: Context, uri: String) {
+    fun setUserImagePath(context: Context, path: String) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(KEY_USER_IMAGE_URI, uri).apply()
+        prefs.edit().putString(KEY_USER_IMAGE_PATH, path).apply()
     }
 
     fun clear(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().remove(KEY_USER_IMAGE_URI).apply()
+        prefs.edit().remove(KEY_USER_IMAGE_PATH).apply()
     }
 }
 

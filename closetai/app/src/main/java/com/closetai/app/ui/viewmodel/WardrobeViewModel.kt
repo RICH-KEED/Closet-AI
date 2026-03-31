@@ -26,6 +26,9 @@ class WardrobeViewModel(
     private val _isUploading = MutableStateFlow(false)
     val isUploading: StateFlow<Boolean> = _isUploading.asStateFlow()
 
+    private val _uploadMessage = MutableStateFlow<String?>(null)
+    val uploadMessage: StateFlow<String?> = _uploadMessage.asStateFlow()
+
     init {
         fetchWardrobe()
     }
@@ -48,11 +51,17 @@ class WardrobeViewModel(
             val result = wardrobeRepository.uploadWardrobeItem(imageUri, category, color)
             result.onSuccess {
                 fetchWardrobe() // Refresh list on success
+                _uploadMessage.value = "Uploaded to wardrobe"
                 onComplete(true)
             }.onFailure {
+                _uploadMessage.value = it.localizedMessage ?: "Upload failed"
                 onComplete(false)
             }
             _isUploading.value = false
         }
+    }
+
+    fun consumeUploadMessage() {
+        _uploadMessage.value = null
     }
 }

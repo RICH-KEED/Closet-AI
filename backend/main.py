@@ -15,12 +15,21 @@ from curl_cffi.requests import AsyncSession
 import tempfile
 import base64
 import httpx
+import json
+from io import BytesIO
 
 try:
-    from gradio_client import Client as GradioClient, file as gradio_file
+    from PIL import Image
+except Exception:
+    Image = None  # type: ignore[assignment]
+
+try:
+    from gradio_client import Client as GradioClient, handle_file as gradio_file
+    from gradio_client.exceptions import AppError as GradioAppError
 except Exception:
     GradioClient = None  # type: ignore[assignment]
     gradio_file = None  # type: ignore[assignment]
+    GradioAppError = None  # type: ignore[assignment]
 
 load_dotenv()
 
@@ -114,8 +123,24 @@ async def get_recommendations(request: RecommendationRequest):
     offset = max(0, request.offset)
     limit = min(max(1, request.limit), 50)
     
-    # 1. Generate a unique hash of the user_profile + context
-    hash_input = f"{CACHE_VERSION}|{profile.model_dump_json()}|{context}"
+    # 1. Generate a unique hash of the user_profile + context.
+    # IMPORTANT: make this stable across requests so Redis caching actually hits.
+    # - sort context keys
+    # - sort wardrobe items (order may vary client-side)
+    context_stable = json.dumps(context or {}, sort_keys=True, separators=(",", ":"))
+    profile_dump = profile.model_dump()
+    wardrobe = profile_dump.get("wardrobe") or []
+    if isinstance(wardrobe, list):
+        try:
+            wardrobe_sorted = sorted(
+                wardrobe,
+                key=lambda w: str((w or {}).get("id", "")) if isinstance(w, dict) else "",
+            )
+            profile_dump["wardrobe"] = wardrobe_sorted
+        except Exception:
+            pass
+    profile_stable = json.dumps(profile_dump, sort_keys=True, separators=(",", ":"))
+    hash_input = f"{CACHE_VERSION}|{profile_stable}|{context_stable}"
     profile_hash = "rec:" + hashlib.md5(hash_input.encode()).hexdigest()
     
     # 2. Check Redis cache first (cache the scraped candidates, not the paginated slice)
@@ -230,6 +255,8 @@ async def try_on(
     garment_des: str = Form(""),
     denoise_steps: int = Form(30),
     seed: int = Form(42),
+    is_checked: bool = Form(True),
+    is_checked_crop: bool = Form(False),
 ):
     """
     Virtual try-on via a Hugging Face Space cloned by the user.
@@ -247,10 +274,13 @@ async def try_on(
 
     # Download garment image and persist both inputs to temp files for gradio_client.
     try:
-        async with httpx.AsyncClient(timeout=60) as client:
+        logger = logging.getLogger(__name__)
+        logger.info(f"Try-on: fetching garment image from URL: {garment_image_url}")
+        async with httpx.AsyncClient(timeout=60, follow_redirects=True) as client:
             garment_resp = await client.get(garment_image_url)
             garment_resp.raise_for_status()
             garment_bytes = garment_resp.content
+        logger.info(f"Try-on: fetched garment image bytes: {len(garment_bytes)} bytes")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to fetch garment image: {e}")
 
@@ -263,7 +293,79 @@ async def try_on(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to read user_image: {e}")
 
-    logger = logging.getLogger(__name__)
+    def _gradio_error_detail(err: Exception) -> str:
+        """
+        gradio_client.exceptions.AppError often stringifies to just `'RuntimeError'`.
+        Extract richer fields (message/status/payload) when present.
+        """
+        parts: list[str] = []
+        try:
+            parts.append(repr(err))
+        except Exception:
+            parts.append(str(err))
+
+        for attr in ("message", "status", "code", "type"):
+            try:
+                val = getattr(err, attr, None)
+            except Exception:
+                val = None
+            if val not in (None, "", "None"):
+                parts.append(f"{attr}={val}")
+
+        # Some versions keep the original server payload in __dict__.
+        try:
+            payload = getattr(err, "__dict__", None)
+            if isinstance(payload, dict) and payload:
+                # Avoid huge blobs; keep only likely-useful keys.
+                keep_keys = ("message", "status", "code", "type", "detail", "data")
+                slim = {k: payload.get(k) for k in keep_keys if k in payload}
+                if slim:
+                    parts.append(f"payload={slim}")
+        except Exception:
+            pass
+
+        # Prefer the best human-readable message if available.
+        try:
+            msg = getattr(err, "message", None)
+            if isinstance(msg, str) and msg.strip():
+                return msg.strip()
+        except Exception:
+            pass
+
+        return " | ".join(p for p in parts if p)
+
+    # If scraped garment images cause Space runtime errors (common when they are model-wearing photos),
+    # fall back to an IDM-VTON example cloth image for demo reliability.
+    # Set TRYON_ENABLE_CLOTH_FALLBACK=0 to disable.
+    cloth_fallback_enabled = (os.getenv("TRYON_ENABLE_CLOTH_FALLBACK", "1").strip() != "0")
+    example_cloth_url = os.getenv(
+        "TRYON_EXAMPLE_CLOTH_URL",
+        "https://huggingface.co/spaces/yisol/IDM-VTON/resolve/main/example/cloth/09133_00.jpg",
+    ).strip()
+
+    def _normalize_image_bytes(raw: bytes, max_side: int) -> bytes:
+        """
+        Best-effort: normalize to RGB JPEG and cap size to reduce Space runtime failures.
+        If Pillow isn't available, return the raw bytes.
+        """
+        if Image is None:
+            return raw
+        try:
+            img = Image.open(BytesIO(raw))
+            img = img.convert("RGB")
+            w, h = img.size
+            scale = min(1.0, float(max_side) / float(max(w, h)))
+            if scale < 1.0:
+                img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+            out = BytesIO()
+            img.save(out, format="JPEG", quality=90, optimize=True)
+            return out.getvalue()
+        except Exception:
+            return raw
+
+    # Normalize inputs to reduce Space 'RuntimeError' likelihood.
+    user_bytes = _normalize_image_bytes(user_bytes, max_side=1024)
+    garment_bytes = _normalize_image_bytes(garment_bytes, max_side=1024)
 
     with tempfile.TemporaryDirectory() as td:
         user_path = os.path.join(td, "user.jpg")
@@ -272,24 +374,75 @@ async def try_on(
             f.write(user_bytes)
         with open(garment_path, "wb") as f:
             f.write(garment_bytes)
+        logger.info(f"Try-on: saved user image to {user_path}")
+        logger.info(f"Try-on: saved garment image to {garment_path}")
 
         try:
-            gr_client = GradioClient(space_id, hf_token=hf_token or None)
-            result = gr_client.predict(
-                dict={"background": gradio_file(user_path), "layers": [], "composite": None},
-                garm_img=gradio_file(garment_path),
-                garment_des=garment_des or "",
-                is_checked=True,
-                # Myntra gives "model-wearing" images; enabling crop usually helps
-                # the Space isolate the garment area better.
-                is_checked_crop=True,
-                denoise_steps=float(denoise_steps),
-                seed=float(seed),
-                api_name="/tryon",
+            # gradio_client supports `token=` for private HF Spaces.
+            logger.info(
+                "Try-on: calling HF Space '%s' /tryon with is_checked=%s, is_checked_crop=%s, "
+                "denoise_steps=%s, seed=%s, cloth_fallback_enabled=%s",
+                space_id,
+                is_checked,
+                is_checked_crop,
+                denoise_steps,
+                seed,
+                cloth_fallback_enabled,
             )
+            gr_client = GradioClient(space_id, token=hf_token or None)
+            last_err: Exception | None = None
+            for attempt in range(1, 3):
+                try:
+                    result = gr_client.predict(
+                        dict={"background": gradio_file(user_path), "layers": [], "composite": None},
+                        garm_img=gradio_file(garment_path),
+                        garment_des=garment_des or "",
+                        is_checked=bool(is_checked),
+                        is_checked_crop=bool(is_checked_crop),
+                        denoise_steps=int(denoise_steps),
+                        seed=int(seed),
+                        api_name="/tryon",
+                    )
+                    last_err = None
+                    break
+                except Exception as e:
+                    last_err = e
+                    # transient errors are common on Spaces (cold start / zerogpu / runtime)
+                    if attempt < 2:
+                        await asyncio.sleep(1.0 * attempt)
+                        continue
+            if last_err is not None:
+                raise last_err
         except Exception as e:
-            logger.error(f"Try-on generation failed: {e}", exc_info=True)
-            raise HTTPException(status_code=502, detail=f"Try-on generation failed: {e}")
+            logger.error(f"Try-on generation failed: {_gradio_error_detail(e)}", exc_info=True)
+            detail = _gradio_error_detail(e)
+
+            # Demo-safe fallback: if Space throws RuntimeError for the scraped garment image,
+            # retry once with a known-good example cloth image.
+            if cloth_fallback_enabled and ("RuntimeError" in detail or "IndexError" in detail):
+                try:
+                    logger.warning("Try-on failed for garment image; retrying with example cloth fallback.")
+                    async with httpx.AsyncClient(timeout=60, follow_redirects=True) as client:
+                        fb = await client.get(example_cloth_url)
+                        fb.raise_for_status()
+                        fb_bytes = _normalize_image_bytes(fb.content, max_side=1024)
+                    with open(garment_path, "wb") as f:
+                        f.write(fb_bytes)
+                    result = gr_client.predict(
+                        dict={"background": gradio_file(user_path), "layers": [], "composite": None},
+                        garm_img=gradio_file(garment_path),
+                        garment_des=(garment_des or "") + " (fallback cloth)",
+                        is_checked=True,
+                        is_checked_crop=True,
+                        denoise_steps=float(denoise_steps),
+                        seed=float(seed),
+                        api_name="/tryon",
+                    )
+                except Exception as fb_err:
+                    logger.error(f"Try-on fallback also failed: {_gradio_error_detail(fb_err)}", exc_info=True)
+                    raise HTTPException(status_code=502, detail=f"Try-on generation failed: {detail}")
+            else:
+                raise HTTPException(status_code=502, detail=f"Try-on generation failed: {detail}")
 
         # result is typically a tuple/list of file paths returned by Gradio.
         try:

@@ -39,6 +39,8 @@ import com.closetai.app.data.model.ProductRecommendation
 import com.closetai.app.data.repository.RecommenderRepository
 import com.closetai.app.data.settings.SavedItemsStore
 import com.closetai.app.data.settings.TryOnUserImageStore
+import com.closetai.app.data.settings.TryOnHistoryItem
+import com.closetai.app.data.settings.TryOnHistoryStore
 import com.closetai.app.ui.viewmodel.RecommendationsUiState
 import com.closetai.app.ui.viewmodel.RecommendationsViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -63,6 +65,8 @@ fun RecommendationsScreen(
     val likedIds by viewModel.likedProductIds.collectAsState()
     var selectedRecommendation by remember { mutableStateOf<ProductRecommendation?>(null) }
     var tryOnLoading by remember { mutableStateOf(false) }
+    var tryOnDialogOpen by remember { mutableStateOf(false) }
+    var tryOnStatusText by remember { mutableStateOf("Your try-on is getting generated…") }
     var tryOnResultFile by remember { mutableStateOf<File?>(null) }
     val scope = rememberCoroutineScope()
 
@@ -71,7 +75,18 @@ fun RecommendationsScreen(
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
-            uri?.let { TryOnUserImageStore.setUserImageUri(context, it.toString()) }
+            uri?.let {
+                try {
+                    val dst = File(context.filesDir, "tryon_user.jpg")
+                    context.contentResolver.openInputStream(it)?.use { input ->
+                        dst.outputStream().use { output -> input.copyTo(output) }
+                    }
+                    TryOnUserImageStore.setUserImagePath(context, dst.absolutePath)
+                    Toast.makeText(context, "Photo saved for try-on", Toast.LENGTH_SHORT).show()
+                } catch (_: Exception) {
+                    Toast.makeText(context, "Failed to save photo", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     )
 
@@ -156,8 +171,8 @@ fun RecommendationsScreen(
             recommendation = recommendation,
             tryOnLoading = tryOnLoading,
             onTryOn = { rec ->
-                val stored = TryOnUserImageStore.getUserImageUri(context)
-                if (stored.isNullOrBlank()) {
+                val storedPath = TryOnUserImageStore.getUserImagePath(context)
+                if (storedPath.isNullOrBlank()) {
                     imagePicker.launch("image/*")
                     Toast.makeText(context, "Upload your photo once to try-on", Toast.LENGTH_SHORT).show()
                     return@RecommendationPreviewDialog
@@ -165,16 +180,15 @@ fun RecommendationsScreen(
 
                 // Run generation in background coroutine.
                 tryOnLoading = true
+                tryOnDialogOpen = true
+                tryOnStatusText = "Your try-on is getting generated…"
                 tryOnResultFile = null
-                val userUri = Uri.parse(stored)
-                val tmp = File.createTempFile("tryon_user_", ".jpg", context.cacheDir)
-                try {
-                    context.contentResolver.openInputStream(userUri)?.use { input ->
-                        tmp.outputStream().use { output -> input.copyTo(output) }
-                    }
-                } catch (e: Exception) {
+                val tmp = File(storedPath)
+                if (!tmp.exists() || tmp.length() <= 0) {
                     tryOnLoading = false
-                    Toast.makeText(context, "Failed to read saved photo", Toast.LENGTH_SHORT).show()
+                    TryOnUserImageStore.clear(context)
+                    Toast.makeText(context, "Saved photo missing. Pick again.", Toast.LENGTH_SHORT).show()
+                    imagePicker.launch("image/*")
                     return@RecommendationPreviewDialog
                 }
 
@@ -200,8 +214,17 @@ fun RecommendationsScreen(
                         tryOnLoading = false
                         if (outFile != null) {
                             tryOnResultFile = outFile
+                            TryOnHistoryStore.add(
+                                context,
+                                TryOnHistoryItem(
+                                    createdAt = System.currentTimeMillis(),
+                                    title = rec.title,
+                                    outputPath = outFile.absolutePath
+                                )
+                            )
                             Toast.makeText(context, "Try-on ready", Toast.LENGTH_SHORT).show()
                         } else {
+                            tryOnStatusText = "Try-on failed. Please try again."
                             Toast.makeText(context, "Try-on failed. Try again.", Toast.LENGTH_SHORT).show()
                         }
                     }
@@ -211,10 +234,16 @@ fun RecommendationsScreen(
         )
     }
 
-    tryOnResultFile?.let { f ->
-        TryOnResultDialog(
-            imageFile = f,
-            onDismiss = { tryOnResultFile = null }
+    if (tryOnDialogOpen) {
+        TryOnGenerationDialog(
+            isGenerating = tryOnLoading,
+            statusText = tryOnStatusText,
+            imageFile = tryOnResultFile,
+            onDismiss = {
+                tryOnDialogOpen = false
+                tryOnResultFile = null
+                tryOnLoading = false
+            }
         )
     }
 }
@@ -452,29 +481,66 @@ private fun RecommendationPreviewDialog(
     )
 }
 
+// (Replaced by TryOnGenerationDialog)
+
 @Composable
-private fun TryOnResultDialog(
-    imageFile: File,
+private fun TryOnGenerationDialog(
+    isGenerating: Boolean,
+    statusText: String,
+    imageFile: File?,
     onDismiss: () -> Unit
 ) {
+    val infinite = rememberInfiniteTransition(label = "tryon_skeleton")
+    val pulse by infinite.animateFloat(
+        initialValue = 0.55f,
+        targetValue = 0.95f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 900),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "tryon_pulse"
+    )
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Try-on result") },
+        title = { Text("Try-on") },
         text = {
-            coil.compose.AsyncImage(
-                model = imageFile,
-                contentDescription = "Try-on result",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(360.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                placeholder = ColorPainter(Color.LightGray),
-                error = ColorPainter(Color.Gray)
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = statusText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (imageFile != null) {
+                    coil.compose.AsyncImage(
+                        model = imageFile,
+                        contentDescription = "Try-on result",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(360.dp)
+                            .clip(RoundedCornerShape(12.dp)),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        placeholder = ColorPainter(Color.LightGray),
+                        error = ColorPainter(Color.Gray)
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(360.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f * pulse))
+                    )
+                }
+            }
         },
         confirmButton = {
-            Button(onClick = onDismiss) { Text("Done") }
+            Button(
+                onClick = onDismiss,
+                enabled = !isGenerating || imageFile != null
+            ) {
+                Text(if (imageFile != null) "Done" else "Close")
+            }
         }
     )
 }
