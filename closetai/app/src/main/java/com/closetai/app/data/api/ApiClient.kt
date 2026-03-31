@@ -7,11 +7,16 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    // For local testing on Android emulator hitting local Python FastAPI
-    // 10.0.2.2 is the special alias to the host loopback interface (localhost) on the emulator
-    // Backend reachable over the same Wi-Fi network.
-    // PC Wi-Fi IPv4 (from `ipconfig`) is expected to be 192.168.31.179.
-    private const val BASE_URL = "http://192.168.31.179:8081/"
+    private const val DEFAULT_BASE_URL = "http://10.0.2.2:8081/"
+
+    @Volatile
+    private var baseUrl: String = DEFAULT_BASE_URL
+
+    @Volatile
+    private var retrofitInstance: Retrofit? = null
+
+    @Volatile
+    private var apiInstance: ClosetAiApi? = null
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
@@ -24,15 +29,48 @@ object ApiClient {
         .writeTimeout(60, TimeUnit.SECONDS)
         .build()
 
-    val retrofit: Retrofit by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
+    fun configureBaseUrl(newBaseUrl: String?) {
+        val normalized = normalizeBaseUrl(newBaseUrl)
+        synchronized(this) {
+            if (normalized == baseUrl && retrofitInstance != null && apiInstance != null) return
+            baseUrl = normalized
+            retrofitInstance = Retrofit.Builder()
+                .baseUrl(baseUrl)
+                .client(okHttpClient)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+            apiInstance = retrofitInstance!!.create(ClosetAiApi::class.java)
+        }
     }
 
-    val closetAiApi: ClosetAiApi by lazy {
-        retrofit.create(ClosetAiApi::class.java)
+    val retrofit: Retrofit
+        get() {
+            retrofitInstance?.let { return it }
+            synchronized(this) {
+                retrofitInstance?.let { return it }
+                configureBaseUrl(baseUrl)
+                return retrofitInstance!!
+            }
+        }
+
+    val closetAiApi: ClosetAiApi
+        get() {
+            apiInstance?.let { return it }
+            synchronized(this) {
+                apiInstance?.let { return it }
+                configureBaseUrl(baseUrl)
+                return apiInstance!!
+            }
+        }
+
+    private fun normalizeBaseUrl(input: String?): String {
+        val trimmed = input?.trim().orEmpty()
+        val candidate = if (trimmed.isBlank()) DEFAULT_BASE_URL else trimmed
+        val withScheme = if (candidate.startsWith("http://") || candidate.startsWith("https://")) {
+            candidate
+        } else {
+            "http://$candidate"
+        }
+        return if (withScheme.endsWith("/")) withScheme else "$withScheme/"
     }
 }

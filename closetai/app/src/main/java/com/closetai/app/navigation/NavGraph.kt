@@ -9,6 +9,8 @@ import com.closetai.app.ui.screens.HomeScreen
 import com.closetai.app.ui.screens.OnboardingCompleteScreen
 import com.closetai.app.ui.screens.SignInScreen
 import com.closetai.app.ui.screens.SplashScreen
+import com.closetai.app.ui.screens.SettingsScreen
+import com.closetai.app.ui.screens.SetupProfileScreen
 import com.closetai.app.ui.screens.onboarding.BodyTypeScreen
 import com.closetai.app.ui.screens.onboarding.BudgetScreen
 import com.closetai.app.ui.screens.onboarding.ClothingCategoriesScreen
@@ -20,6 +22,7 @@ import com.closetai.app.ui.screens.onboarding.SkinToneScreen
 import com.closetai.app.ui.screens.onboarding.SpecialRequirementsScreen
 import com.closetai.app.ui.screens.onboarding.StylePreferenceScreen
 import com.closetai.app.ui.screens.RecommendationsScreen
+import com.closetai.app.ui.screens.SavedScreen
 import com.closetai.app.ui.screens.WardrobeScreen
 import com.closetai.app.ui.viewmodel.OnboardingViewModel
 import com.closetai.app.ui.viewmodel.RecommendationsViewModel
@@ -148,8 +151,18 @@ fun NavGraph(
         composable(Screen.ClothingCategories.route) {
             ClothingCategoriesScreen(
                 viewModel = onboardingViewModel,
-                onContinue = { navController.navigate(Screen.OnboardingComplete.route) },
+                onContinue = { navController.navigate(Screen.SetupProfile.route) },
                 onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.SetupProfile.route) {
+            SetupProfileScreen(
+                onReady = {
+                    navController.navigate(Screen.OnboardingComplete.route) {
+                        popUpTo(Screen.Gender.route) { inclusive = false }
+                    }
+                }
             )
         }
         
@@ -170,6 +183,9 @@ fun NavGraph(
                         popUpTo(Screen.Home.route) { inclusive = true }
                     }
                 },
+                onOpenSettings = {
+                    navController.navigate(Screen.Settings.route)
+                },
                 onViewRecommendations = { contextParams ->
                     var route = Screen.Recommendations.route
                     // We can pass context via ViewModel since it's shared across the graph or just set it on init
@@ -181,6 +197,12 @@ fun NavGraph(
                         popUpTo(Screen.Home.route) { inclusive = false }
                     }
                 }
+            )
+        }
+
+        composable(Screen.Settings.route) {
+            SettingsScreen(
+                onBack = { navController.popBackStack() }
             )
         }
         
@@ -210,7 +232,17 @@ fun NavGraph(
             
             RecommendationsScreen(
                 viewModel = recommendationsViewModel,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateSaved = { navController.navigate(Screen.Saved.route) }
+            )
+        }
+
+        composable(Screen.Saved.route) {
+            SavedScreen(
+                recommenderRepository = com.closetai.app.data.repository.RecommenderRepository(
+                    com.closetai.app.data.api.ApiClient.closetAiApi
+                ),
+                onBack = { navController.popBackStack() }
             )
         }
     }

@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Set
 from models import ProductRecommendation, UserProfile
 
 class MatchScorer:
@@ -8,9 +8,18 @@ class MatchScorer:
     WEATHER_WEIGHT = 20.0  # Bonus/Penalty for weather match
 
     @classmethod
-    def score_product(cls, product: ProductRecommendation, profile: UserProfile, weather: dict = None) -> ProductRecommendation:
+    def score_product(
+        cls,
+        product: ProductRecommendation,
+        profile: UserProfile,
+        weather: dict = None,
+        liked_product_ids: Optional[Set[str]] = None,
+        disliked_product_ids: Optional[Set[str]] = None,
+    ) -> ProductRecommendation:
         score = 0.0
         reasons = []
+        liked_product_ids = liked_product_ids or set()
+        disliked_product_ids = disliked_product_ids or set()
 
         title_lower = product.title.lower() if product.title else ""
         brand_lower = product.brand.lower() if product.brand else ""
@@ -69,19 +78,46 @@ class MatchScorer:
                     score += cls.WEATHER_WEIGHT
                     reasons.append("Good choice for rainy weather")
 
+        # User feedback boost/penalty (small but noticeable)
+        if product.id in liked_product_ids:
+            score += 0.2
+            reasons.append("You liked this item")
+        if product.id in disliked_product_ids:
+            score -= 0.2
+            reasons.append("You disliked this item")
+
+        # Clamp to [0, 1] because the UI expects normalized scores.
+        score = max(0.0, min(score, 1.0))
         product.match_score = score
         product.match_reasons = reasons
         return product
 
     @classmethod
-    def rank_products(cls, products: List[ProductRecommendation], profile: UserProfile, weather: dict = None) -> List[ProductRecommendation]:
+    def rank_products(
+        cls,
+        products: List[ProductRecommendation],
+        profile: UserProfile,
+        weather: dict = None,
+        liked_product_ids: Optional[Set[str]] = None,
+        disliked_product_ids: Optional[Set[str]] = None,
+    ) -> List[ProductRecommendation]:
         scored_products = []
         for p in products:
-            scored_p = cls.score_product(p, profile, weather)
-            # Filter out products with 0 or negative score
-            if scored_p.match_score > 0:
-                scored_products.append(scored_p)
+            scored_p = cls.score_product(
+                p,
+                profile,
+                weather,
+                liked_product_ids=liked_product_ids,
+                disliked_product_ids=disliked_product_ids,
+            )
+            scored_products.append(scored_p)
         
         # Sort by score descending
         scored_products.sort(key=lambda x: x.match_score, reverse=True)
+        # Safety: if everything scored 0, keep items instead of returning empty.
+        # This helps first-time profiles where we may not match any keyword yet.
+        if scored_products and scored_products[0].match_score <= 0:
+            for item in scored_products:
+                if not item.match_reasons:
+                    item.match_reasons = ["Setting up your style profile"]
         return scored_products

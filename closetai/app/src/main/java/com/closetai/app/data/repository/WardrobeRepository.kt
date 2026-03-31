@@ -98,36 +98,7 @@ class WardrobeRepository {
                 )
             }
 
-            if (items.isEmpty()) {
-                // Demo fallback so the wardrobe UI isn't broken while Firebase is empty.
-                val demoNow = System.currentTimeMillis()
-                val demoImage = (
-                    "data:image/png;base64,"
-                        + "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8"
-                        + "/x8AAwMCAO+kv1kAAAAASUVORK5CYII="
-                )
-                val demoItems = listOf(
-                    WardrobeItem(
-                        id = "demo-tee",
-                        userId = uid,
-                        imageUrl = demoImage,
-                        category = "T-Shirt",
-                        color = "Black",
-                        addedAt = demoNow
-                    ),
-                    WardrobeItem(
-                        id = "demo-jeans",
-                        userId = uid,
-                        imageUrl = demoImage,
-                        category = "Jeans",
-                        color = "Blue",
-                        addedAt = demoNow - 1
-                    )
-                )
-                Result.success(demoItems)
-            } else {
-                Result.success(items)
-            }
+            Result.success(items)
         } catch (e: Exception) {
             Result.failure(mapWardrobeException(e))
         }

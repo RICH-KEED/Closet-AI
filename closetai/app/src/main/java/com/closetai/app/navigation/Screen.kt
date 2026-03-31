@@ -13,8 +13,11 @@ sealed class Screen(val route: String) {
     object Budget : Screen("onboarding/budget")
     object SpecialRequirements : Screen("onboarding/special_requirements")
     object ClothingCategories : Screen("onboarding/clothing_categories")
+    object SetupProfile : Screen("onboarding/setup_profile")
     object OnboardingComplete : Screen("onboarding/complete")
     object Home : Screen("home")
     object Recommendations : Screen("recommendations")
+    object Saved : Screen("saved")
     object Wardrobe : Screen("wardrobe")
+    object Settings : Screen("settings")
 }

@@ -6,7 +6,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.closetai.app.data.model.BackendUserProfile
 import com.closetai.app.data.repository.UserRepository
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 
 private const val TAG = "OnboardingViewModel"
@@ -167,6 +169,25 @@ class OnboardingViewModel : ViewModel() {
                 
                 result.onSuccess {
                     Log.d(TAG, "saveOnboardingData success")
+                    try {
+                        val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+                        if (uid.isNotBlank()) {
+                            val cached = BackendUserProfile(
+                                uid = uid,
+                                gender = gender.ifBlank { null },
+                                bodyType = bodyType.ifBlank { null },
+                                clothingSize = clothingSize.ifBlank { null },
+                                budget = budget.ifBlank { null },
+                                styles = styles,
+                                favoriteColors = favoriteColors,
+                                occasions = occasions,
+                                wardrobe = emptyList()
+                            )
+                            lastSavedBackendProfile = cached
+                        }
+                    } catch (_: Exception) {
+                        // no-op
+                    }
                     onSuccess()
                 }.onFailure { e ->
                     Log.e(TAG, "saveOnboardingData failed", e)
@@ -179,4 +200,6 @@ class OnboardingViewModel : ViewModel() {
             }
         }
     }
+
+    internal var lastSavedBackendProfile: BackendUserProfile? = null
 }

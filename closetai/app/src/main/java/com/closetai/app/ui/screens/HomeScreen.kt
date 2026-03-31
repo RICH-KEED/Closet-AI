@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,6 +33,7 @@ import android.Manifest
 @Composable
 fun HomeScreen(
     onSignOut: () -> Unit,
+    onOpenSettings: () -> Unit,
     onViewRecommendations: (Map<String, String>) -> Unit,
     onNavigateToWardrobe: () -> Unit
 ) {
@@ -139,6 +141,12 @@ fun HomeScreen(
                         )
                     },
                     actions = {
+                        IconButton(onClick = onOpenSettings) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings"
+                            )
+                        }
                         IconButton(
                             onClick = {
                                 userRepository.signOut()
@@ -161,7 +169,7 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(24.dp),
-                    verticalArrangement = Arrangement.Center,
+                    verticalArrangement = Arrangement.Top,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // User avatar
@@ -182,7 +190,7 @@ fun HomeScreen(
                         )
                     }
                     
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                     
                     // Welcome message
                     Text(
@@ -199,7 +207,7 @@ fun HomeScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     
-                    Spacer(modifier = Modifier.height(48.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                     
                     // Coming soon card
                     Card(
@@ -231,12 +239,24 @@ fun HomeScreen(
                             Spacer(modifier = Modifier.height(16.dp))
                             Button(
                                 onClick = {
+                                    // Always available: fetch recommendations from saved profile only.
+                                    onViewRecommendations(emptyMap())
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = CircleShape
+                            ) {
+                                Text("View Profile Recommendations")
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+                            OutlinedButton(
+                                onClick = {
+                                    // Optional: ask current context and fetch a fresh contextual set.
                                     showDynamicContextDialog = true
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = CircleShape
                             ) {
-                                Text("View My Recommendations")
+                                Text("Get New Recommendations")
                             }
                         }
                     }

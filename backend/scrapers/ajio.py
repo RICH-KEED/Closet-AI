@@ -1,5 +1,7 @@
+import asyncio
 import json
 import logging
+import re
 from typing import List, Optional, Tuple
 from curl_cffi.requests import AsyncSession
 from bs4 import BeautifulSoup
@@ -8,6 +10,16 @@ from models import ProductRecommendation, UserProfile
 logger = logging.getLogger(__name__)
 
 class AjioScraper:
+    def _parse_budget_value(self, budget_raw: str) -> float:
+        cleaned = (budget_raw or "").lower()
+        digits = re.findall(r"\d+", cleaned)
+        if digits:
+            try:
+                return float(digits[0])
+            except ValueError:
+                pass
+        return 2000.0
+
     def __init__(self):
         self.platform = "ajio"
         self.base_url = "https://www.ajio.com"
@@ -67,7 +79,14 @@ class AjioScraper:
             return normalized
         return f"{self.base_url}/{normalized.lstrip('/')}"
 
-    def _score_product(self, title: str, price: Optional[float], profile: UserProfile, context: dict) -> Tuple[float, List[str]]:
+    def _score_product(
+        self,
+        title: str,
+        price: Optional[float],
+        profile: UserProfile,
+        context: dict,
+        max_budget: float,
+    ) -> Tuple[float, List[str]]:
         score = 0.5
         reasons = []
         title_lower = title.lower()
@@ -78,13 +97,6 @@ class AjioScraper:
                 reasons.append(f"Available in your color '{color}'")
 
         if price:
-            budget_str = profile.budget or ""
-            max_budget = 2000
-            if "under" in budget_str.lower():
-                try:
-                    max_budget = int(''.join(filter(str.isdigit, budget_str)))
-                except ValueError:
-                    pass
             if price <= max_budget:
                 score += 0.2
                 reasons.append(f"Within budget (₹{price})")
@@ -103,91 +115,118 @@ class AjioScraper:
         raw_query = self._build_search_query(user_profile, context)
         # Ajio search uses %20 for spaces
         url = f"https://www.ajio.com/search/{raw_query.replace(' ', '%20')}"
+        max_budget = self._parse_budget_value(user_profile.budget or "")
         
         recommendations = []
-        try:
-            logger.info(f"Ajio: fetching {url}")
-            async with AsyncSession(impersonate="chrome110") as session:
-                resp = await session.get(url, timeout=20)
-                if resp.status_code != 200:
-                    logger.warning(f"Ajio: HTTP {resp.status_code} for '{raw_query}'")
-                    return recommendations
+        last_error: Optional[Exception] = None
+        for attempt in range(1, 4):
+            try:
+                logger.info(f"Ajio: fetching {url} (attempt {attempt}/3)")
+                async with AsyncSession(impersonate="chrome110") as session:
+                    resp = await session.get(url, timeout=30)
+                    if resp.status_code != 200:
+                        logger.warning(
+                            f"Ajio: HTTP {resp.status_code} for '{raw_query}' (attempt {attempt}/3)"
+                        )
+                        continue
 
-                soup = BeautifulSoup(resp.text, "html.parser")
-                scripts = soup.find_all("script")
-                raw_json_str = ""
+                    soup = BeautifulSoup(resp.text, "html.parser")
+                    scripts = soup.find_all("script")
+                    raw_json_str = ""
+
+                    for script in scripts:
+                        if script.string and "window.__PRELOADED_STATE__" in script.string:
+                            raw_json_str = self._extract_json(script.string)
+                            break
+
+                    if not raw_json_str:
+                        logger.warning(
+                            f"Ajio: Could not find __PRELOADED_STATE__ for '{raw_query}' (attempt {attempt}/3)"
+                        )
+                        continue
+
+                    data = json.loads(raw_json_str)
                 
-                for script in scripts:
-                    if script.string and "window.__PRELOADED_STATE__" in script.string:
-                        raw_json_str = self._extract_json(script.string)
-                        break
-                        
-                if not raw_json_str:
-                    logger.warning("Ajio: Could not find __PRELOADED_STATE__")
-                    return recommendations
-                    
-                data = json.loads(raw_json_str)
-                
-                # Recursive search for product nodes
-                def find_products(obj):
-                    found = []
-                    if isinstance(obj, dict):
-                        if "name" in obj and "price" in obj and "url" in obj:
-                            found.append(obj)
-                        for k, v in obj.items():
-                            res = find_products(v)
-                            if res: found.extend(res)
-                    elif isinstance(obj, list):
-                        for item in obj:
-                            res = find_products(item)
-                            if res: found.extend(res)
-                    return found
+                    # Recursive search for product nodes
+                    def find_products(obj):
+                        found = []
+                        if isinstance(obj, dict):
+                            if "name" in obj and "price" in obj and "url" in obj:
+                                found.append(obj)
+                            for k, v in obj.items():
+                                res = find_products(v)
+                                if res:
+                                    found.extend(res)
+                        elif isinstance(obj, list):
+                            for item in obj:
+                                res = find_products(item)
+                                if res:
+                                    found.extend(res)
+                        return found
 
-                product_nodes = find_products(data)
-                logger.info(f"Ajio: found {len(product_nodes)} raw products")
+                    product_nodes = find_products(data)
+                    logger.info(f"Ajio: found {len(product_nodes)} raw products")
 
-                # Parse top 20
-                for node in product_nodes[:20]:
-                    title = node.get("name")
-                    product_url = self._normalize_url(node.get("url", ""))
-                    brand = node.get("brandName", "Ajio Vendor")
-                    
-                    price_val = 0.0
-                    price_obj = node.get("price")
-                    if isinstance(price_obj, dict):
-                        price_val = price_obj.get("value", 0.0)
-                    elif isinstance(price_obj, (int, float)):
-                        price_val = float(price_obj)
+                    attempt_recommendations: List[ProductRecommendation] = []
 
-                    # Extract primary image
-                    images = node.get("images", [])
-                    img_url = ""
-                    if images and len(images) > 0 and isinstance(images[0], dict):
-                        img_url = images[0].get("url", "")
-                        
-                    img_url = self._normalize_url(img_url)
-                        
-                    product_id = f"ajio-{node.get('code', hash(product_url))}"
+                    # Parse top 20
+                    for node in product_nodes[:20]:
+                        title = node.get("name")
+                        product_url = self._normalize_url(node.get("url", ""))
+                        brand = node.get("brandName", "Ajio Vendor")
 
-                    if title and img_url and product_url:
-                        score, reasons = self._score_product(title, price_val, user_profile, context)
-                        if score > 0.4:
-                            recommendations.append(
-                                ProductRecommendation(
-                                    id=product_id,
-                                    title=title,
-                                    brand=brand,
-                                    price=price_val,
-                                    image_url=img_url,
-                                    product_url=product_url,
-                                    platform=self.platform,
-                                    match_score=score,
-                                    match_reasons=reasons
-                                )
+                        price_val = 0.0
+                        price_obj = node.get("price")
+                        if isinstance(price_obj, dict):
+                            price_val = price_obj.get("value", 0.0)
+                        elif isinstance(price_obj, (int, float)):
+                            price_val = float(price_obj)
+
+                        # Extract primary image
+                        images = node.get("images", [])
+                        img_url = ""
+                        if images and len(images) > 0 and isinstance(images[0], dict):
+                            img_url = images[0].get("url", "")
+
+                        img_url = self._normalize_url(img_url)
+                        product_id = f"ajio-{node.get('code', hash(product_url))}"
+
+                        if title and img_url and product_url:
+                            if price_val > max_budget:
+                                continue
+                            score, reasons = self._score_product(
+                                title,
+                                price_val,
+                                user_profile,
+                                context,
+                                max_budget,
                             )
+                            if score > 0.4:
+                                attempt_recommendations.append(
+                                    ProductRecommendation(
+                                        id=product_id,
+                                        title=title,
+                                        brand=brand,
+                                        price=price_val,
+                                        image_url=img_url,
+                                        product_url=product_url,
+                                        platform=self.platform,
+                                        match_score=score,
+                                        match_reasons=reasons,
+                                    )
+                                )
 
-        except Exception as e:
-            logger.error(f"Ajio scraper error: {e}")
+                    recommendations = attempt_recommendations
+                    break
+            except Exception as e:
+                last_error = e
+                logger.error(f"Ajio scraper error (attempt {attempt}/3): {e}", exc_info=True)
+                if attempt < 3:
+                    await asyncio.sleep(1.0 * attempt)
+                continue
+
+        if last_error:
+            logger.warning(f"Ajio: finished with last error: {last_error}")
 
         logger.info(f"Ajio: returning {len(recommendations)} products")
         return recommendations

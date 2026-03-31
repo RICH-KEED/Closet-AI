@@ -14,9 +14,35 @@ data class ProductRecommendation(
     @SerializedName("match_reasons") val matchReasons: List<String> = emptyList()
 )
 
+data class RecommendationFeedbackRequest(
+    @SerializedName("user_uid") val userUid: String,
+    @SerializedName("product_id") val productId: String,
+    @SerializedName("action") val action: String,
+    @SerializedName("platform") val platform: String? = null,
+    @SerializedName("title") val title: String? = null,
+    @SerializedName("brand") val brand: String? = null,
+    @SerializedName("price") val price: Double? = null,
+    @SerializedName("image_url") val imageUrl: String? = null,
+    @SerializedName("product_url") val productUrl: String? = null,
+    @SerializedName("match_score") val matchScore: Double? = null,
+    @SerializedName("match_reasons") val matchReasons: List<String>? = null
+)
+
+data class RecommendationFeedbackResponse(
+    @SerializedName("status") val status: String,
+    @SerializedName("feedback_version") val feedbackVersion: Int
+)
+
+data class TryOnResponse(
+    @SerializedName("status") val status: String,
+    @SerializedName("image_base64") val imageBase64: String
+)
+
 data class RecommendationRequest(
     @SerializedName("user_profile") val userProfile: BackendUserProfile,
-    @SerializedName("context") val context: Map<String, String>? = null
+    @SerializedName("context") val context: Map<String, String>? = null,
+    @SerializedName("offset") val offset: Int = 0,
+    @SerializedName("limit") val limit: Int = 20
 )
 
 // We define a separate model for the backend request to match Python's UserProfile model exactly.

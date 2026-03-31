@@ -109,6 +109,21 @@ class MyntraScraper:
         except (ValueError, TypeError):
             return 0.0
 
+    def _parse_budget_value(self, budget_raw: str) -> float:
+        cleaned = (budget_raw or "").lower().replace(" ", "")
+        if not cleaned:
+            return 5000
+        mapped = BUDGET_MAP.get(cleaned)
+        if mapped is not None:
+            return float(mapped)
+        digits = re.findall(r"\d+", cleaned)
+        if digits:
+            try:
+                return float(digits[0])
+            except ValueError:
+                pass
+        return 5000
+
     def _compute_match_score(
         self,
         product: dict,
@@ -170,16 +185,41 @@ class MyntraScraper:
 
         try:
             logger.info(f"Myntra: fetching {url}")
-            async with session.get(
-                url,
-                headers=self._build_headers(),
-                timeout=aiohttp.ClientTimeout(total=20),
-                ssl=False
-            ) as resp:
-                if resp.status != 200:
-                    logger.warning(f"Myntra: HTTP {resp.status} for '{raw_query}'")
-                    return []
-                html = await resp.text()
+            request_timeout = aiohttp.ClientTimeout(total=30)
+
+            html = None
+            last_error: Optional[Exception] = None
+            for attempt in range(1, 4):
+                try:
+                    async with session.get(
+                        url,
+                        headers=self._build_headers(),
+                        timeout=request_timeout,
+                    ) as resp:
+                        if resp.status != 200:
+                            logger.warning(
+                                f"Myntra: HTTP {resp.status} for '{raw_query}' (attempt {attempt}/3)"
+                            )
+                            continue
+                        html = await resp.text()
+                        break
+                except Exception as e:
+                    last_error = e
+                    logger.warning(
+                        f"Myntra: request error for '{raw_query}' (attempt {attempt}/3): {e}",
+                        exc_info=True,
+                    )
+                    if attempt < 3:
+                        await asyncio.sleep(1.0 * attempt)
+                    continue
+
+            if not html:
+                if last_error:
+                    logger.error(
+                        f"Myntra: failed to fetch '{raw_query}' after retries: {last_error}",
+                        exc_info=True,
+                    )
+                return []
 
             # Find the window.__myx = {...} block using BeautifulSoup
             soup = BeautifulSoup(html, "html.parser")
@@ -341,8 +381,8 @@ class MyntraScraper:
         Main entrypoint — makes concurrent aiohttp requests to Myntra.
         """
         queries = self._build_queries(user_profile)
-        budget_str = (user_profile.budget or "").lower().replace(" ", "")
-        max_budget = BUDGET_MAP.get(budget_str, 5000)
+        budget_str = user_profile.budget or ""
+        max_budget = self._parse_budget_value(budget_str)
 
         logger.info(f"Myntra: {len(queries)} queries | budget ₹{max_budget}")
 
