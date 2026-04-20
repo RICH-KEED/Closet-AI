@@ -5,6 +5,7 @@ import com.closetai.app.data.model.RecommendationFeedbackRequest
 import com.closetai.app.data.model.RecommendationFeedbackResponse
 import com.closetai.app.data.model.RecommendationRequest
 import com.closetai.app.data.model.TryOnResponse
+import com.closetai.app.data.model.WardrobeUploadResponse
 import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.GET
@@ -35,4 +36,10 @@ interface ClosetAiApi {
         @Part("garment_image_url") garmentImageUrl: okhttp3.RequestBody,
         @Part("garment_des") garmentDes: okhttp3.RequestBody
     ): Response<TryOnResponse>
+
+    @Multipart
+    @POST("api/v1/wardrobe/upload")
+    suspend fun uploadWardrobeImage(
+        @Part image: MultipartBody.Part
+    ): Response<WardrobeUploadResponse>
 }

@@ -1,0 +1,492 @@
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{longtable}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{fancyhdr}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue
+}
+
+\setstretch{1.2}
+\setlist[itemize]{noitemsep, topsep=4pt}
+\setlist[enumerate]{noitemsep, topsep=4pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{StyleSense AI}
+\lhead{Project Report}
+\cfoot{\thepage}
+
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries\Huge}{CHAPTER \thechapter.}{10pt}{\Huge}
+
+% -------------------------
+% Project metadata (edit here)
+% -------------------------
+\newcommand{\ProjectTitle}{StyleSense AI: An Intelligent Mobile System for Personalized Fashion Recommendation and Virtual Try-On}
+\newcommand{\ProjectShort}{StyleSense AI}
+\newcommand{\TeamA}{JAPJIT}
+\newcommand{\TeamB}{PRABHSIMRAN}
+\newcommand{\TeamC}{PANSHUL}
+\newcommand{\TeamD}{RATIK}
+\newcommand{\TeamE}{ABHINEET}
+\newcommand{\CourseName}{Minor Project}
+\newcommand{\InstituteName}{(Your Institute Name)}
+\newcommand{\DepartmentName}{(Your Department)}
+\newcommand{\SubmissionMonthYear}{April 2026}
+
+\begin{document}
+
+% -------------------------
+% Title Page
+% -------------------------
+\begin{titlepage}
+  \centering
+  \vspace*{1.0cm}
+  {\Large \InstituteName \par}
+  \vspace{0.2cm}
+  {\large \DepartmentName \par}
+  \vspace{1.0cm}
+
+  {\Huge\bfseries \ProjectTitle \par}
+  \vspace{0.8cm}
+  {\large \CourseName \par}
+  \vspace{1.2cm}
+
+  \begin{tabular}{rl}
+    \textbf{Team Members:} & \TeamA \\
+                           & \TeamB \\
+                           & \TeamC \\
+                           & \TeamD \\
+                           & \TeamE \\
+  \end{tabular}
+
+  \vfill
+  {\large \SubmissionMonthYear \par}
+\end{titlepage}
+
+% -------------------------
+% Abstract
+% -------------------------
+\pagenumbering{roman}
+\chapter*{ABSTRACT}
+Modern fashion e-commerce presents users with an overwhelming number of choices, while existing recommendation experiences often ignore important personalization signals such as body type, style preference, budget, local weather, and a user’s existing wardrobe. \ProjectShort{} addresses this gap through an Android application backed by a FastAPI service that aggregates real-world product candidates from live e-commerce pages, ranks them using a multi-factor scoring engine, and optionally generates virtual try-on previews by invoking a hosted AI try-on model (Hugging Face Space via Gradio API). The system integrates Firebase Authentication (Google sign-in) for user identity, Firestore for user profile and wardrobe metadata, Redis caching for fast pagination and feedback-aware re-ranking, and OpenWeatherMap for context-aware recommendations. This report documents the motivation, background literature, complete design flow, module-wise implementation, and validation results, and concludes with future enhancements such as multi-store scraping expansion and learning-based ranking models.
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+% -------------------------
+% List of Standards
+% -------------------------
+\chapter*{LIST OF STANDARDS}
+\addcontentsline{toc}{chapter}{LIST OF STANDARDS}
+
+\begin{longtable}{p{0.22\textwidth}p{0.72\textwidth}}
+\toprule
+\textbf{Standard/Guideline} & \textbf{Where/Why Used in \ProjectShort{}} \\
+\midrule
+OWASP Mobile Security Testing Guide (MSTG) & Used as security checklist for Android app, authentication flow, storage of tokens, and networking best practices. \\
+OAuth 2.0 / OpenID Connect (Google Sign-In) & Authentication mechanism behind Firebase Google sign-in (Credential Manager). \\
+RESTful API Design & Backend endpoints follow predictable HTTP method + path conventions and JSON/multipart payloads. \\
+IEEE 29148 (Requirements) & Used as reference structure for requirement identification and mapping to tasks/features. \\
+Material Design 3 & UI components and interaction patterns used in Jetpack Compose screens. \\
+\bottomrule
+\end{longtable}
+
+\clearpage
+\pagenumbering{arabic}
+
+% =========================================================
+% CHAPTER 1
+% =========================================================
+\chapter{INTRODUCTION}
+
+\section{Identification of Client/ Need/ Relevant Contemporary Issue}
+The ``client'' for \ProjectShort{} is the everyday online fashion shopper who must browse thousands of items across platforms. Contemporary issues include (i) decision fatigue from excessive catalog size, (ii) lack of personalization beyond generic filters, and (iii) high return rates due to poor fit or mismatch with personal taste and context. A modern assistant should consider not only style and budget, but also body-related constraints, wardrobe compatibility, occasion requirements, and environmental context such as weather.
+
+\section{Identification of Problem}
+Most fashion platforms provide recommendations driven by popularity or limited purchase history, and cannot provide meaningful personalization for new users (cold-start). Users also struggle to visualize how an item will appear on them, which leads to low confidence and frequent returns. Therefore, the problem addressed is: \textit{design and implement a mobile system that provides context-aware, profile-driven fashion recommendations and integrates virtual try-on to increase user confidence.}
+
+\section{Identification of Tasks}
+The project tasks were defined and implemented as the following modules:
+\begin{itemize}
+  \item \textbf{Mobile Application (Android)}: Jetpack Compose UI, onboarding, authentication, wardrobe management, recommendations UI, saved items, and try-on views.
+  \item \textbf{Backend API (FastAPI)}: endpoints for recommendations, feedback, saved items, wardrobe image upload, scraper connectivity check, and virtual try-on proxy.
+  \item \textbf{Data Collection (Scraping)}: live product retrieval from Myntra (HTML parsing) with stable query generation.
+  \item \textbf{Recommendation Engine}: MatchScorer ranking based on user profile, wardrobe signals, weather, and feedback (like/dislike).
+  \item \textbf{Storage and Caching}: Firebase Auth + Firestore for user/wardrobe; Redis for caching candidates and feedback-aware ranking results.
+  \item \textbf{Virtual Try-On Integration}: Hugging Face Space invocation via Gradio client; returns generated image for display.
+\end{itemize}
+
+\section{Timeline}
+Table~\ref{tab:timeline} summarizes a practical timeline suitable for a minor project.
+
+\begin{table}[H]
+\centering
+\caption{Project Timeline}
+\label{tab:timeline}
+\begin{tabular}{p{0.18\textwidth}p{0.72\textwidth}}
+\toprule
+\textbf{Weeks} & \textbf{Activities} \\
+\midrule
+1--2 & Problem identification, requirements, module split, tooling and environment setup. \\
+3--4 & Android UI scaffolding (Compose + navigation), onboarding screens, profile data model design. \\
+5--6 & Backend FastAPI skeleton, core API contracts (Pydantic + Retrofit), wardrobe upload endpoint. \\
+7--8 & Myntra scraping and candidate normalization; MatchScorer ranking rules and feedback plumbing. \\
+9--10 & Virtual try-on integration via Hugging Face Space; Firebase Auth + Firestore integration. \\
+11--12 & Integration testing, UI polish, performance checks, documentation/report preparation. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Organization of the Report}
+Chapter 1 introduces the motivation, problem statement, and task breakdown. Chapter 2 reviews the background and summarizes existing approaches. Chapter 3 describes the complete design flow and architecture. Chapter 4 presents implementation results and validation. Chapter 5 concludes the work and proposes future directions, followed by references, appendices, and a user manual.
+
+% =========================================================
+% CHAPTER 2
+% =========================================================
+\chapter{LITERATURE REVIEW/BACKGROUND STUDY}
+
+\section{Timeline of the Reported Problem}
+Fashion recommendation evolved from early content-based approaches (matching keywords or product attributes) to collaborative filtering that leverages user-item interactions. With the emergence of large-scale visual datasets, deep learning systems began capturing visual semantics such as style, color, and garment type. More recently, multimodal systems combine text, images, and context signals (time, weather, occasion). Virtual try-on research has progressed from geometric warping to diffusion-based approaches, improving realism but requiring significant compute.
+
+\section{Existing Solutions}
+Table~\ref{tab:existing} summarizes a brief comparison of existing solutions and the gap addressed by \ProjectShort{}.
+
+\begin{table}[H]
+\centering
+\caption{Existing Solutions vs. \ProjectShort{}}
+\label{tab:existing}
+\begin{tabular}{p{0.18\textwidth}p{0.34\textwidth}p{0.38\textwidth}}
+\toprule
+\textbf{System} & \textbf{Strengths} & \textbf{Limitations (Gap)} \\
+\midrule
+Myntra & Large catalog, basic personalization & Not explicitly weather/wardrobe-aware; limited virtual try-on integration in the recommendation loop. \\
+ASOS & Size guidance, broad inventory & Context signals (weather/occasion) not central; no wardrobe-based compatibility. \\
+Stitch Fix & ML + stylist hybrid & Subscription model; not applicable to typical Indian e-commerce browsing flow. \\
+H\&M Quiz & Simple preference capture & Limited personalization depth; not tied to live multi-source suggestions. \\
+Google Lens & Visual search & Not a personalized recommender; no try-on or fit awareness. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Bibliometric Analysis}
+\textbf{What it is:} Bibliometric analysis is a systematic method to study published research literature using measurable indicators (e.g., publication count over time, citation counts, keyword co-occurrence, and venue distribution). In project reports, it is commonly used to justify that the chosen approach is grounded in research and to identify gaps.\newline
+
+\textbf{How it is applied here:} The literature was filtered to include (i) fashion recommendation with images/text, (ii) compatibility/outfit modeling, (iii) virtual try-on pipelines, and (iv) context-aware recommendations. The following representative works motivate the system design:
+\begin{itemize}
+  \item \textbf{DeepFashion} (Liu et al., 2016): Introduced large-scale annotated fashion datasets enabling robust recognition and retrieval; motivates image-driven fashion understanding.
+  \item \textbf{CNN-based visual features} (He et al., 2016): Visual representation learning (e.g., ResNet) improves categorization and similarity; relevant for modern fashion embeddings.
+  \item \textbf{Outfit compatibility} (e.g., Cheng et al., 2021): Demonstrates that compatibility can be modeled beyond single-item relevance; motivates wardrobe-aware recommendations.
+  \item \textbf{VITON / virtual try-on} (Han et al., 2018): Virtual try-on systems generate user-garment composites; motivates try-on integration to improve confidence.
+  \item \textbf{Context-aware recommenders} (survey-style): Shows that environment context (time/weather/location) improves recommendation relevance; motivates weather-aware scoring.
+  \item \textbf{Body/fit-aware styling} (domain studies): Highlights impact of body type and measurements on clothing suitability; motivates onboarding and size fields.
+\end{itemize}
+
+\section{Review Summary}
+The review supports three key decisions: (i) in a cold-start scenario, profile-driven and rule-based scoring provides an effective baseline that can be improved later with learning-based models; (ii) virtual try-on significantly increases user trust but is compute-heavy, hence using a hosted model reduces infrastructure burden; and (iii) context signals such as weather and occasion are strong personalization factors and can be integrated through explicit features.
+
+\section{Problem Definition}
+\textbf{Formal definition:} Design and implement a mobile application that generates personalized fashion recommendations from live e-commerce data using a multi-factor scoring model incorporating user profile (body type, skin tone, size, style, budget), contextual inputs (occasion, dress code, weather), and wardrobe inventory, and supports a virtual try-on preview to increase user confidence.
+
+\section{Goals/Objectives}
+\begin{enumerate}
+  \item Collect a structured user profile through onboarding screens and store it securely.
+  \item Provide real-world product recommendations with pagination and stable ranking.
+  \item Incorporate wardrobe signals so recommended items align with existing clothing.
+  \item Incorporate weather context using location coordinates and a weather API.
+  \item Capture feedback (like/dislike) and reflect it in subsequent rankings.
+  \item Provide a virtual try-on preview for selected garments through AI inference.
+\end{enumerate}
+
+% =========================================================
+% CHAPTER 3
+% =========================================================
+\chapter{DESIGN FLOW/PROCESS}
+
+\section{Evaluation \& Selection of Specifications/Features}
+Table~\ref{tab:specs} lists key specifications and technology selections.
+
+\begin{table}[H]
+\centering
+\caption{Specifications and Features}
+\label{tab:specs}
+\begin{tabular}{p{0.30\textwidth}p{0.60\textwidth}}
+\toprule
+\textbf{Component} & \textbf{Selected Stack / Feature} \\
+\midrule
+Mobile app & Kotlin, Jetpack Compose (Material 3), Navigation Compose, ViewModel, Coroutines \\
+Authentication & Firebase Auth (Google Sign-In via Credential Manager) \\
+Database & Firestore (user profile + wardrobe metadata) \\
+Backend & Python FastAPI, Uvicorn, Pydantic models \\
+Caching & Redis (cached candidates + ranked lists + feedback sets) with in-memory fallback \\
+Data collection & Web scraping from Myntra product listing pages \\
+Weather context & OpenWeatherMap API \\
+Try-on AI & Hugging Face Space called via Gradio client; returns generated image as base64 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Design Constraints}
+\begin{itemize}
+  \item \textbf{Compute constraints:} No training or heavy ML inference on-device; try-on must be hosted.
+  \item \textbf{Scraping constraints:} HTML structure changes and rate limits; reliability mitigated by connectivity checks and caching.
+  \item \textbf{Latency constraints:} Try-on calls may take tens of seconds; UI should communicate loading state and store history.
+  \item \textbf{Data constraints:} New users have no history; use onboarding + wardrobe to reduce cold-start.
+  \item \textbf{Infrastructure constraints:} Redis may be unavailable; backend must still run (fallback cache).
+\end{itemize}
+
+\section{Analysis of Features and Finalization Subject to Constraints}
+Table~\ref{tab:finalize} shows how constraints influenced design decisions.
+
+\begin{table}[H]
+\centering
+\caption{Feature Finalization vs. Constraints}
+\label{tab:finalize}
+\begin{tabular}{p{0.22\textwidth}p{0.34\textwidth}p{0.34\textwidth}}
+\toprule
+\textbf{Feature} & \textbf{Constraint} & \textbf{Decision} \\
+\midrule
+Ranking model & Cold-start; no training data & Use multi-factor rule-based scoring (MatchScorer) initially. \\
+Try-on & GPU/compute needed & Use hosted HF Space and call via Gradio API. \\
+Wardrobe images & Storage complexity & Upload to backend static storage and store URLs in Firestore. \\
+Fast pagination & Scraping cost & Cache candidates and ranked lists in Redis; stable hashing for cache keys. \\
+Weather-aware suggestions & Requires location + API & Request location permission on app; use OpenWeatherMap via backend. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Design Flow}
+Figures~\ref{fig:architecture}--\ref{fig:tryonflow} are flowcharts/diagrams generated separately and included as images. Place generated PNGs in `report/figures/` with the filenames below.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/fig1_system_architecture.png}
+\caption{System Architecture of \ProjectShort{}}
+\label{fig:architecture}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/fig2_recommendation_flow.png}
+\caption{Recommendation Flow (Android \textrightarrow{} Backend \textrightarrow{} Ranking \textrightarrow{} UI)}
+\label{fig:recflow}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/fig3_tryon_flow.png}
+\caption{Virtual Try-On Flow}
+\label{fig:tryonflow}
+\end{figure}
+
+\subsection*{Module Breakdown}
+\begin{itemize}
+  \item \textbf{Authentication Module}: Google sign-in (Firebase) and user identity management.
+  \item \textbf{Onboarding Module}: Structured collection of profile signals required for personalization.
+  \item \textbf{Wardrobe Module}: User uploads wardrobe images and metadata; stored in Firestore.
+  \item \textbf{Recommendation Module}: Live scraping + caching + MatchScorer ranking and pagination.
+  \item \textbf{Try-On Module}: Hosted try-on inference and result visualization/history.
+  \item \textbf{Feedback Module}: Like/dislike and saved list reflected in re-ranking.
+\end{itemize}
+
+\section{Design Selection}
+\textbf{Jetpack Compose} was chosen for modern, state-driven UI and rapid screen development. \textbf{FastAPI} was selected for asynchronous request handling, automatic documentation, and strong data validation with Pydantic. \textbf{Firebase} enables robust authentication and a serverless database without building a custom auth service. \textbf{Hugging Face Spaces} provides a practical way to integrate AI try-on without maintaining GPU infrastructure.
+
+\section{Implementation Plan/Methodology}
+An iterative methodology was followed: define API contracts, build core screens and navigation, implement backend endpoints and scrapers, integrate ranking and caching, and then integrate try-on and data storage. Each sprint ended with integration tests across Android \textrightarrow{} backend flows.
+
+% =========================================================
+% CHAPTER 4
+% =========================================================
+\chapter{RESULTS ANALYSIS AND VALIDATION}
+
+\section{Implementation of Solution}
+This chapter summarizes implementation results module-wise and validates the end-to-end flows.
+
+\subsection{Onboarding Module}
+The onboarding experience collects user-specific fields such as gender, body type, measurements, skin tone, style preferences, fit preferences, common occasions, budget range, special requirements, and clothing categories. These signals reduce cold-start and enable more relevant filtering and ranking.\newline
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/fig4_onboarding_flow.png}
+\caption{Onboarding Screen Flow}
+\label{fig:onboarding}
+\end{figure}
+
+\subsection{Authentication Module}
+The application supports Google sign-in using Credential Manager and Firebase Authentication. On first login, a user profile document is created in Firestore, and subsequent sessions load the stored profile to pre-fill preferences.
+
+\subsection{Wardrobe Module}
+Users add wardrobe items through an image picker. The image is uploaded to the backend via multipart form-data, and the backend returns a public URL. The app stores wardrobe metadata (category, color, timestamps) and the image URL in Firestore under `users/\{uid\}/wardrobe/`.\newline
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/fig5_wardrobe_upload_flow.png}
+\caption{Wardrobe Upload Flow}
+\label{fig:wardrobe}
+\end{figure}
+
+\subsection{Recommendation Module}
+The recommendation request includes a user profile and context (occasion, dress code, location coordinates). The backend scrapes Myntra to obtain candidates, caches them using a stable hash, fetches weather if available, applies MatchScorer ranking, diversifies results, and returns a paginated slice.\newline
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/fig6_recommendation_dataflow.png}
+\caption{Recommendation Data Flow}
+\label{fig:recdata}
+\end{figure}
+
+\subsection{Virtual Try-On Module}
+For a selected garment, the app sends the user selfie and garment image URL to the backend. The backend downloads the garment image, normalizes inputs, calls a Hugging Face Space using Gradio, and returns the generated image as base64. The app displays the result and stores history locally for quick review.\newline
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/fig7_tryon_flow_detailed.png}
+\caption{Try-On Flow (Detailed)}
+\label{fig:tryondetail}
+\end{figure}
+
+\subsection{Feedback and Saved Items}
+When a user likes or dislikes an item, the app posts feedback to the backend. The backend stores feedback sets in Redis and uses them to adjust subsequent ranking. Liked items are also stored as snapshots for a saved-items screen.\newline
+
+\subsection{Quantitative Summary}
+Table~\ref{tab:endpoints} provides a simple endpoint-level validation summary (measurements may be refined during demonstration).
+
+\begin{table}[H]
+\centering
+\caption{Backend Endpoint Validation Summary}
+\label{tab:endpoints}
+\begin{tabular}{p{0.30\textwidth}p{0.22\textwidth}p{0.36\textwidth}}
+\toprule
+\textbf{Endpoint} & \textbf{Output} & \textbf{Validation Result} \\
+\midrule
+`GET /health` & JSON status & Returns environment and status reliably. \\
+`POST /api/v1/wardrobe/upload` & `image\_url` & Upload returns a public URL served via `/uploads`. \\
+`POST /api/v1/recommendations` & list of products & Returns ranked + diversified product list with pagination. \\
+`POST /api/v1/recommendations/feedback` & feedback version & Stores user preference and updates version. \\
+`GET /api/v1/recommendations/saved/\{uid\}` & saved list & Returns liked item snapshots. \\
+`POST /api/v1/tryon` & base64 image & Generates try-on output via hosted Space (latency depends on model availability). \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =========================================================
+% CHAPTER 5
+% =========================================================
+\chapter{CONCLUSION AND FUTURE WORK}
+
+\section{Conclusion}
+\ProjectShort{} demonstrates a complete full-stack fashion assistant integrating profile-driven onboarding, live e-commerce data collection, context-aware ranking, feedback loops, and AI-based virtual try-on. The system is suitable as a minor project because it balances practical engineering (Android + backend + Firebase) with meaningful AI integration (try-on inference and personalization logic).
+
+\section{Future Work}
+\begin{itemize}
+  \item Expand scraping to additional stores (AJIO, Amazon, H\&M) and implement resilient scraping (headless browser fallback).
+  \item Replace rule-based scoring with learning-based rankers (pairwise ranking, embeddings, or multimodal transformers).
+  \item Improve wardrobe understanding using image tagging (garment type, dominant colors) to enable outfit generation.
+  \item Add offline caching for previously viewed recommendations and saved items.
+  \item Improve try-on quality/latency using optimized inference endpoints and garment segmentation.
+\end{itemize}
+
+% =========================================================
+% REFERENCES
+% =========================================================
+\begin{thebibliography}{99}
+\addcontentsline{toc}{chapter}{REFERENCES}
+
+\bibitem{deepfashion}
+Liu, Z., Luo, P., Qiu, S., Wang, X., \& Tang, X. (2016).
+DeepFashion: Powering Robust Clothes Recognition and Retrieval with Rich Annotations.
+\textit{Proceedings of IEEE CVPR}.
+
+\bibitem{resnet}
+He, K., Zhang, X., Ren, S., \& Sun, J. (2016).
+Deep Residual Learning for Image Recognition.
+\textit{Proceedings of IEEE CVPR}.
+
+\bibitem{viton}
+Han, X., Wu, Z., Wu, Z., Yu, R., \& Davis, L. (2018).
+VITON: An Image-based Virtual Try-on Network.
+\textit{Proceedings of IEEE CVPR}.
+
+\bibitem{contextrecsys}
+Adomavicius, G., \& Tuzhilin, A. (2011).
+Context-Aware Recommender Systems.
+\textit{Recommender Systems Handbook}.
+
+\bibitem{fastapi}
+FastAPI Documentation. \url{https://fastapi.tiangolo.com/}
+
+\bibitem{compose}
+Android Jetpack Compose Documentation. \url{https://developer.android.com/compose}
+
+\bibitem{firebase}
+Firebase Authentication Documentation. \url{https://firebase.google.com/docs/auth}
+
+\bibitem{openweather}
+OpenWeatherMap API Documentation. \url{https://openweathermap.org/api}
+
+\end{thebibliography}
+
+% =========================================================
+% APPENDIX
+% =========================================================
+\appendix
+
+\chapter{Plagiarism Report}
+Attach the plagiarism report generated by your institute’s approved tool.
+
+\chapter{Design Checklist}
+\begin{table}[H]
+\centering
+\caption{Design Checklist}
+\begin{tabular}{p{0.64\textwidth}p{0.22\textwidth}}
+\toprule
+\textbf{Checklist Item} & \textbf{Status} \\
+\midrule
+Requirements mapped to features & Completed \\
+API contracts defined (request/response) & Completed \\
+UI navigation flow verified & Completed \\
+Backend endpoints tested & Completed \\
+Scraper basic validation & Completed \\
+Caching and fallback behavior & Completed \\
+Try-on integration tested with sample images & Completed \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\chapter{USER MANUAL}
+\section{Installation/Setup}
+\begin{enumerate}
+  \item Start the backend server (FastAPI) on a reachable host/port.
+  \item In the Android app Settings screen, set the backend base URL (e.g., emulator: `http://10.0.2.2:8081/`).
+  \item Ensure Firebase configuration is present (google-services.json) and Firestore rules allow authenticated access.
+\end{enumerate}
+
+\section{How to Use the Application}
+\begin{enumerate}
+  \item Open the app and complete Google sign-in.
+  \item Complete onboarding to provide preferences and constraints.
+  \item Add wardrobe items using the Wardrobe screen and upload photos.
+  \item From Home, request recommendations by selecting context (occasion/dress code) and allowing location for weather-aware results.
+  \item Like items to save them; open Saved screen to view saved items.
+  \item Use Try-On by selecting an item and uploading/selecting a user selfie to generate a preview.
+\end{enumerate}
+
+\end{document}
+

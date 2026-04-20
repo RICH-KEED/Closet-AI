@@ -1,26 +1,29 @@
 package com.closetai.app.data.repository
 
-import android.net.Uri
 import android.util.Log
+import com.closetai.app.data.api.ApiClient
 import com.closetai.app.data.model.WardrobeItem
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
 import kotlinx.coroutines.tasks.await
 import kotlin.math.max
 import java.util.UUID
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
 
 class WardrobeRepository {
 
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
-    private val storage = FirebaseStorage.getInstance()
+    private val api = ApiClient.closetAiApi
     private val tag = "WardrobeRepository"
 
-    suspend fun uploadWardrobeItem(imageUri: Uri, category: String, color: String): Result<WardrobeItem> {
+    suspend fun uploadWardrobeItem(imageFile: File, category: String, color: String): Result<WardrobeItem> {
         val user = auth.currentUser
         if (user == null) {
             return Result.failure(Exception("User not authenticated"))
@@ -28,12 +31,19 @@ class WardrobeRepository {
         
         val uid = user.uid
         val itemId = UUID.randomUUID().toString()
-        val storageRef = storage.reference.child("users/$uid/wardrobe/$itemId.jpg")
 
         return try {
-            // Upload the image to Firebase Storage
-            storageRef.putFile(imageUri).await()
-            val downloadUrl = storageRef.downloadUrl.await().toString()
+            Log.i(tag, "Uploading wardrobe item to backend: file=${imageFile.absolutePath} bytes=${imageFile.length()}")
+            val mediaType = "image/*".toMediaTypeOrNull()
+            val body = imageFile.asRequestBody(mediaType)
+            val part = MultipartBody.Part.createFormData("image", imageFile.name, body)
+            val response = api.uploadWardrobeImage(part)
+            if (!response.isSuccessful) {
+                return Result.failure(Exception("Backend upload failed: ${response.code()} ${response.message()}"))
+            }
+            val upload = response.body()
+                ?: return Result.failure(Exception("Backend upload failed: response body is null"))
+            val downloadUrl = upload.imageUrl
 
             // Save the metadata to Firestore
             val wardrobeItem = WardrobeItem(
@@ -128,6 +138,13 @@ class WardrobeRepository {
                         Exception(
                             "Missing or insufficient Storage permissions. " +
                                 "Deploy storage.rules and ensure user is signed in."
+                        )
+                    }
+                    StorageException.ERROR_OBJECT_NOT_FOUND -> {
+                        Exception(
+                            "Uploaded image could not be found in Storage (object not found). " +
+                                "This usually means the upload didn’t actually reach your bucket, " +
+                                "the app is pointing at a different Firebase project/bucket, or rules blocked it."
                         )
                     }
                     else -> Exception(error.localizedMessage ?: "Storage request failed")

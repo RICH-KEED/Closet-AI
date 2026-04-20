@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>StyleSense AI — Viva Prep (Team)</title>
+    <style>
+      :root{
+        --bg:#0b1020;
+        --card:#121a33;
+        --muted:#a9b4d0;
+        --text:#eef2ff;
+        --line:rgba(255,255,255,.10);
+        --shadow: 0 16px 40px rgba(0,0,0,.35);
+        --accent:#7c5cff;
+        --good:#31c48d;
+        --warn:#faca15;
+        --bad:#fb7185;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+        background: radial-gradient(1200px 600px at 20% 0%, rgba(124,92,255,.35), transparent 55%),
+                    radial-gradient(900px 500px at 85% 10%, rgba(49,196,141,.22), transparent 60%),
+                    var(--bg);
+        color:var(--text);
+      }
+      a{color:inherit}
+      .wrap{max-width:1100px;margin:0 auto;padding:32px 18px 64px}
+      header{
+        background: linear-gradient(180deg, rgba(124,92,255,.20), rgba(18,26,51,.15));
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 22px 20px;
+        box-shadow: var(--shadow);
+      }
+      .title{
+        display:flex;gap:14px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap
+      }
+      h1{margin:0;font-size:26px;letter-spacing:.2px}
+      .subtitle{margin:8px 0 0;color:var(--muted);line-height:1.5}
+      .pillrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+      .pill{
+        border:1px solid var(--line);
+        background: rgba(255,255,255,.04);
+        padding:8px 10px;border-radius:999px;font-size:12.5px;color:var(--muted)
+      }
+      .grid{
+        display:grid;
+        grid-template-columns: 1fr 1fr;
+        gap:16px;
+        margin-top:18px;
+      }
+      @media (max-width: 860px){
+        .grid{grid-template-columns: 1fr}
+      }
+      .card{
+        background: rgba(18,26,51,.85);
+        border:1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        overflow:hidden;
+      }
+      details{padding:0}
+      details > summary{
+        list-style:none;
+        cursor:pointer;
+        padding:16px 16px;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:10px;
+        border-bottom:1px solid var(--line);
+        user-select:none;
+      }
+      details > summary::-webkit-details-marker{display:none}
+      .name{
+        display:flex;align-items:center;gap:12px;flex-wrap:wrap
+      }
+      .badge{
+        width:12px;height:12px;border-radius:999px;
+        background: var(--accent);
+        box-shadow: 0 0 0 4px rgba(124,92,255,.18);
+      }
+      .role{font-size:13px;color:var(--muted)}
+      .chev{color:var(--muted);font-size:13px}
+      .content{padding:16px}
+      h3{margin:0 0 8px;font-size:14px;letter-spacing:.3px;text-transform:uppercase;color:#dfe6ff}
+      ul{margin:8px 0 14px;padding-left:18px;color:#e9edff}
+      li{margin:6px 0;line-height:1.45}
+      .qa{display:grid;gap:10px}
+      .q{
+        border:1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px 12px;
+        background: rgba(255,255,255,.03);
+      }
+      .q strong{display:block;margin-bottom:6px}
+      .q span{color:var(--muted);display:block;line-height:1.5}
+      .footer{
+        margin-top:18px;
+        border-top:1px dashed var(--line);
+        padding-top:14px;
+        color:var(--muted);
+        font-size:13px;
+        line-height:1.55;
+      }
+      .mini{
+        margin-top:14px;
+        display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between
+      }
+      .btn{
+        border:1px solid var(--line);
+        background: rgba(255,255,255,.05);
+        color:var(--text);
+        padding:10px 12px;border-radius:12px;
+        cursor:pointer;
+      }
+      .btn:hover{background: rgba(255,255,255,.07)}
+      @media print{
+        body{background:#fff;color:#000}
+        header,.card{box-shadow:none}
+        header{border:1px solid #ddd}
+        .card{border:1px solid #ddd}
+        .subtitle,.pill,.role,.chev,.footer,.q span{color:#333}
+        .btn{display:none}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="title">
+          <div>
+            <h1>StyleSense AI — Viva Preparation (Team)</h1>
+            <p class="subtitle">
+              Project: <strong>StyleSense AI</strong> (ClosetAI) — Android (Jetpack Compose) + FastAPI backend + Firebase/Firestore + Redis caching + Weather context + Hugging Face Try-On.
+              Use this as a speaking script for viva: explain your module, flow, and decisions.
+            </p>
+            <div class="pillrow">
+              <div class="pill">Android: Kotlin + Compose + ViewModel + Retrofit</div>
+              <div class="pill">Backend: FastAPI + Pydantic + Redis</div>
+              <div class="pill">Data: Myntra scraping + normalization</div>
+              <div class="pill">AI: HF Space via Gradio try-on</div>
+              <div class="pill">DB: Firebase Auth + Firestore</div>
+            </div>
+          </div>
+          <div class="mini">
+            <button class="btn" onclick="expandAll()">Expand all</button>
+            <button class="btn" onclick="collapseAll()">Collapse all</button>
+            <button class="btn" onclick="window.print()">Print</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="grid">
+        <!-- ABHINEET -->
+        <section class="card">
+          <details open>
+            <summary>
+              <div class="name">
+                <span class="badge" style="background:#7c5cff;box-shadow:0 0 0 4px rgba(124,92,255,.18)"></span>
+                <div>
+                  <div><strong>ABHINEET</strong></div>
+                  <div class="role">Mobile App + AI Integration (Compose UI, ViewModels, API wiring, Try-On UI)</div>
+                </div>
+              </div>
+              <div class="chev">Click to toggle</div>
+            </summary>
+            <div class="content">
+              <h3>Your Work (Explain in Viva)</h3>
+              <ul>
+                <li>Android app architecture: Navigation graph, screen routes, state management with ViewModels and repositories.</li>
+                <li>API integration: Retrofit <code>ClosetAiApi</code>, base URL switching via Settings, error handling, pagination.</li>
+                <li>Recommendations UI: grid, load more, like/dislike, saved items, and try-on entry points.</li>
+                <li>Try-on flow: image picker/selfie storage, request formation, base64 decode and render, local history (<code>TryOnHistoryStore</code>).</li>
+                <li>Wardrobe UI: add item dialog (category/color), upload to backend, store metadata to Firestore, realtime list updates.</li>
+              </ul>
+
+              <h3>Key Concepts</h3>
+              <ul>
+                <li>Why Compose: declarative UI, state-driven rendering, easy theming and navigation.</li>
+                <li>Repository pattern: decouple UI from networking + Firestore logic.</li>
+                <li>Handling latency: progress UI for try-on and retries; caching on device for smoother UX.</li>
+              </ul>
+
+              <h3>10 Viva Questions (with short answers)</h3>
+              <div class="qa">
+                <div class="q"><strong>1) What is the end-to-end flow from Home to Recommendations?</strong><span>Home collects context (occasion, lat/lon). ViewModel builds <code>RecommendationRequest</code> from Firestore profile + wardrobe. Retrofit calls backend. Results shown in grid with pagination.</span></div>
+                <div class="q"><strong>2) Why did you use ViewModels + repositories?</strong><span>To keep UI logic thin, make testing easier, and centralize API/Firestore calls with consistent error handling and caching.</span></div>
+                <div class="q"><strong>3) How do you handle base URL switching?</strong><span>Settings stores URL in <code>ServerConfigStore</code>; app reconfigures Retrofit via <code>ApiClient.configureBaseUrl()</code>.</span></div>
+                <div class="q"><strong>4) How is try-on requested from the app?</strong><span>Multipart upload: user selfie file + garment URL + parameters; backend returns base64 image which is decoded and displayed.</span></div>
+                <div class="q"><strong>5) Where is wardrobe stored?</strong><span>Wardrobe metadata is stored in Firestore under <code>users/{uid}/wardrobe</code>. Images are uploaded to backend static storage and saved as URLs.</span></div>
+                <div class="q"><strong>6) Why not store wardrobe images directly in Firestore?</strong><span>Firestore is document DB and not optimized for large binaries. We store only metadata + URL, which is scalable and cheaper.</span></div>
+                <div class="q"><strong>7) How does the app show Saved items?</strong><span>Saved items are fetched via backend endpoint that returns liked item snapshots (server-side saved list).</span></div>
+                <div class="q"><strong>8) How do you handle network failures?</strong><span>Show user-friendly error state, allow retries, and keep cached results (e.g., recommendations cache/history) to avoid blank screens.</span></div>
+                <div class="q"><strong>9) What is the role of local stores like TryOnHistoryStore?</strong><span>Quick access to recent results even if backend is slow/unavailable; reduces repeated try-on requests.</span></div>
+                <div class="q"><strong>10) What are the biggest UX challenges?</strong><span>Try-on latency, permissions (location/images), and ensuring onboarding doesn’t feel too long while collecting enough profile data.</span></div>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <!-- JAPJIT -->
+        <section class="card">
+          <details>
+            <summary>
+              <div class="name">
+                <span class="badge" style="background:#31c48d;box-shadow:0 0 0 4px rgba(49,196,141,.18)"></span>
+                <div>
+                  <div><strong>JAPJIT</strong></div>
+                  <div class="role">Backend API Server (FastAPI endpoints, request/response models, static uploads)</div>
+                </div>
+              </div>
+              <div class="chev">Click to toggle</div>
+            </summary>
+            <div class="content">
+              <h3>Your Work (Explain in Viva)</h3>
+              <ul>
+                <li>FastAPI app design, CORS setup, and API versioning (<code>/api/v1</code>).</li>
+                <li>Endpoints: health, wardrobe upload, scraper connectivity, recommendations, feedback, saved items, try-on proxy.</li>
+                <li>Request/response validation using Pydantic models and typed payloads.</li>
+                <li>Static file serving: mount <code>/uploads</code> to serve wardrobe image URLs.</li>
+                <li>Operational aspects: env vars (<code>UPLOADS_DIR</code>, <code>TRYON_SPACE_ID</code>, <code>HF_TOKEN</code>), logging, and error handling.</li>
+              </ul>
+
+              <h3>Key Concepts</h3>
+              <ul>
+                <li>Why FastAPI: async concurrency + automatic docs + strict validation.</li>
+                <li>Stable caching keys: profile/context hashing for Redis cache hits.</li>
+              </ul>
+
+              <h3>10 Viva Questions (with short answers)</h3>
+              <div class="qa">
+                <div class="q"><strong>1) Why FastAPI over Flask?</strong><span>Better async support, built-in validation with Pydantic, auto OpenAPI docs, and cleaner typing.</span></div>
+                <div class="q"><strong>2) How is wardrobe image upload implemented?</strong><span>Multipart <code>UploadFile</code>, validate content type, save under uploads directory, and return a public URL served by <code>StaticFiles</code>.</span></div>
+                <div class="q"><strong>3) How do you avoid stale cached results?</strong><span>Use a cache version string; if payload/logic changes, increment version so keys change.</span></div>
+                <div class="q"><strong>4) What is the structure of the recommendation endpoint?</strong><span>Accepts profile + context + pagination; scrapes candidates, caches, ranks, diversifies, then slices page.</span></div>
+                <div class="q"><strong>5) Where is feedback stored?</strong><span>In Redis sets keyed by user id: liked/disliked ids; also saved snapshots for “saved items”.</span></div>
+                <div class="q"><strong>6) How do you handle external failures (scraper/try-on)?</strong><span>Use timeouts, retries, clear HTTP error responses, and safe fallbacks (e.g., fallback cloth image for try-on).</span></div>
+                <div class="q"><strong>7) Why do you return base64 for try-on output?</strong><span>It simplifies Android display without hosting generated files, and avoids extra storage or signed URLs.</span></div>
+                <div class="q"><strong>8) How do you ensure the response always has an image URL?</strong><span>Sanitize the returned slice: if <code>image_url</code> blank, replace with a placeholder.</span></div>
+                <div class="q"><strong>9) What is the connectivity endpoint used for?</strong><span>Quick check if e-commerce sites are reachable; helps diagnose 0-result scraping issues.</span></div>
+                <div class="q"><strong>10) What’s the biggest backend bottleneck?</strong><span>Scraping and try-on inference latency; caching and concurrency reduce impact.</span></div>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <!-- PRABHSIMRAN -->
+        <section class="card">
+          <details>
+            <summary>
+              <div class="name">
+                <span class="badge" style="background:#faca15;box-shadow:0 0 0 4px rgba(250,202,21,.18)"></span>
+                <div>
+                  <div><strong>PRABHSIMRAN</strong></div>
+                  <div class="role">Data Collection / Scraping (Myntra query building, HTML parsing, normalization)</div>
+                </div>
+              </div>
+              <div class="chev">Click to toggle</div>
+            </summary>
+            <div class="content">
+              <h3>Your Work (Explain in Viva)</h3>
+              <ul>
+                <li>Scraping pipeline: build search queries from user profile + context (gender/style/budget/categories).</li>
+                <li>HTML parsing: extract product title, brand, price, image URL, product URL; normalize fields for backend.</li>
+                <li>Anti-breakage practices: safe selectors, guard clauses, logging when page structure changes.</li>
+                <li>Connectivity checks and rate-limit awareness; advise caching + throttling.</li>
+              </ul>
+
+              <h3>Key Concepts</h3>
+              <ul>
+                <li>Why scraping: no official public catalog API for all products; live data helps demo realism.</li>
+                <li>Normalization: different listing formats need consistent <code>ProductRecommendation</code> schema.</li>
+              </ul>
+
+              <h3>10 Viva Questions (with short answers)</h3>
+              <div class="qa">
+                <div class="q"><strong>1) Why is scraping needed?</strong><span>To fetch real-time product candidates when a public API isn’t available; keeps recommendations realistic.</span></div>
+                <div class="q"><strong>2) What are the main risks of scraping?</strong><span>HTML layout changes, rate limiting, bot detection, and incomplete data. We mitigate via caching + connectivity checks.</span></div>
+                <div class="q"><strong>3) How do you build a query for Myntra?</strong><span>From user preferences: category + style keywords + gender + budget constraints; generate a stable search term.</span></div>
+                <div class="q"><strong>4) What fields do you extract?</strong><span>Title, brand, price, product URL, image URL, platform, plus optional match reasons/score later.</span></div>
+                <div class="q"><strong>5) How do you handle missing images/prices?</strong><span>Fallback values, skip invalid entries, and backend sanitization for UI safety.</span></div>
+                <div class="q"><strong>6) How do you validate scraper quality?</strong><span>Manual spot checks + counts, logging for 0 results, and testing with multiple queries.</span></div>
+                <div class="q"><strong>7) How does caching help scraping?</strong><span>Scrape once, reuse candidates for pagination and feedback-aware ranking; reduces repeated requests to the site.</span></div>
+                <div class="q"><strong>8) How can you make scraping more robust?</strong><span>Use multiple selectors, headless browser fallback, retry with alternate queries, and monitoring for changes.</span></div>
+                <div class="q"><strong>9) What is the connectivity endpoint for?</strong><span>To confirm the target site is reachable; if blocked, scraper results will be zero.</span></div>
+                <div class="q"><strong>10) Future improvement?</strong><span>Add multi-source scraping and a manager to merge/deduplicate candidates across sites.</span></div>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <!-- PANSHUL -->
+        <section class="card">
+          <details>
+            <summary>
+              <div class="name">
+                <span class="badge" style="background:#38bdf8;box-shadow:0 0 0 4px rgba(56,189,248,.18)"></span>
+                <div>
+                  <div><strong>PANSHUL</strong></div>
+                  <div class="role">Database & Authentication (Firebase Auth, Firestore schema/rules, Redis caching layer overview)</div>
+                </div>
+              </div>
+              <div class="chev">Click to toggle</div>
+            </summary>
+            <div class="content">
+              <h3>Your Work (Explain in Viva)</h3>
+              <ul>
+                <li>Firebase Authentication: Google sign-in identity, UID as primary key across modules.</li>
+                <li>Firestore schema design: user document for onboarding/profile; subcollection for wardrobe items.</li>
+                <li>Security: explain Firestore rules idea (only authenticated users access their docs).</li>
+                <li>Redis cache concept: why we need caching for scraper candidates and ranked results; feedback stored as sets.</li>
+              </ul>
+
+              <h3>Key Concepts</h3>
+              <ul>
+                <li>Why Firestore: serverless, real-time sync, simple integration with mobile.</li>
+                <li>Data separation: Firestore for persistent user data; Redis for fast temporary caches.</li>
+              </ul>
+
+              <h3>10 Viva Questions (with short answers)</h3>
+              <div class="qa">
+                <div class="q"><strong>1) Why use Firebase Auth?</strong><span>It provides secure Google sign-in without building an auth server; UID becomes a stable identifier.</span></div>
+                <div class="q"><strong>2) What is the Firestore data model?</strong><span><code>users/{uid}</code> profile doc + <code>users/{uid}/wardrobe/{itemId}</code> items with image URL and metadata.</span></div>
+                <div class="q"><strong>3) Why not store everything in Redis?</strong><span>Redis is in-memory and not guaranteed durable; user profiles and wardrobes must persist reliably.</span></div>
+                <div class="q"><strong>4) What is the difference between Firestore and Firebase Storage?</strong><span>Firestore stores documents; Storage stores large files. Here images are uploaded to backend and only URLs are stored.</span></div>
+                <div class="q"><strong>5) How do Firestore security rules matter?</strong><span>They ensure only authenticated users can read/write their own profile/wardrobe data, preventing leaks.</span></div>
+                <div class="q"><strong>6) Why Redis caching is helpful?</strong><span>Scraping is expensive; caching allows fast “Load more” and re-ranking without re-scraping.</span></div>
+                <div class="q"><strong>7) What is a feedback set?</strong><span>A Redis structure storing liked/disliked product IDs per user to adjust ranking in later calls.</span></div>
+                <div class="q"><strong>8) What happens if Redis is down?</strong><span>The backend can fall back to in-memory caching or re-scrape; functionality remains but performance drops.</span></div>
+                <div class="q"><strong>9) How do you link Firestore user with backend requests?</strong><span>App includes UID in profile/request; backend uses it to fetch/store feedback and saved items in Redis.</span></div>
+                <div class="q"><strong>10) What’s a privacy concern here?</strong><span>User images and preferences; must avoid public exposure, use authenticated access and minimal stored sensitive data.</span></div>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <!-- RATIK -->
+        <section class="card">
+          <details>
+            <summary>
+              <div class="name">
+                <span class="badge" style="background:#fb7185;box-shadow:0 0 0 4px rgba(251,113,133,.18)"></span>
+                <div>
+                  <div><strong>RATIK</strong></div>
+                  <div class="role">Recommendation Engine (MatchScorer, weather integration, feedback-aware ranking)</div>
+                </div>
+              </div>
+              <div class="chev">Click to toggle</div>
+            </summary>
+            <div class="content">
+              <h3>Your Work (Explain in Viva)</h3>
+              <ul>
+                <li>MatchScorer: score each product using overlaps with user style/color/brand preferences and category relevance.</li>
+                <li>Weather-aware adjustments: if hot/rain/cold, boost relevant fabric/garment categories (rule-based).</li>
+                <li>Feedback-aware re-ranking: use liked/disliked sets to nudge future rankings.</li>
+                <li>Diversification: cap per platform and total results to keep UI usable.</li>
+                <li>Pagination: rank full candidate list, then slice by offset/limit for stable pages.</li>
+              </ul>
+
+              <h3>Key Concepts</h3>
+              <ul>
+                <li>Cold start: rule-based ranking works when no purchase history exists.</li>
+                <li>Explainability: match reasons can be returned so users understand why an item is recommended.</li>
+              </ul>
+
+              <h3>10 Viva Questions (with short answers)</h3>
+              <div class="qa">
+                <div class="q"><strong>1) What is MatchScorer?</strong><span>A rule-based ranking component that computes a match score per product using user preferences + context.</span></div>
+                <div class="q"><strong>2) Why rule-based instead of ML model?</strong><span>Minor project + cold-start; rule-based is fast, explainable, and doesn’t need training data.</span></div>
+                <div class="q"><strong>3) How is weather used?</strong><span>Backend fetches weather from OpenWeatherMap given lat/lon and adjusts scores (e.g., rain → boost rain-friendly items).</span></div>
+                <div class="q"><strong>4) How does feedback affect ranking?</strong><span>Liked items increase preference weights; disliked IDs can be penalized or filtered to reduce repetition.</span></div>
+                <div class="q"><strong>5) What is diversification and why needed?</strong><span>Prevents results from one source dominating; improves perceived variety and reduces duplicates.</span></div>
+                <div class="q"><strong>6) What if the scorer returns empty results?</strong><span>Fallback to raw scraped candidates so the UI never shows empty state (demo reliability).</span></div>
+                <div class="q"><strong>7) How do you make results stable across pages?</strong><span>Rank the full list first, then slice; caching keyed by feedback version keeps consistency.</span></div>
+                <div class="q"><strong>8) What are “match reasons”?</strong><span>Human-readable explanations (e.g., “matches your casual style”, “good for warm weather”) generated alongside scores.</span></div>
+                <div class="q"><strong>9) What are typical scoring features?</strong><span>Style keywords, color preferences, brand affinity, category relevance, budget/price fit, and context (occasion/weather).</span></div>
+                <div class="q"><strong>10) Future improvement?</strong><span>Replace rules with embeddings + learning-to-rank, and use outfit compatibility modeling for wardrobe matching.</span></div>
+              </div>
+            </div>
+          </details>
+        </section>
+      </div>
+
+      <div class="footer">
+        <strong>Tip:</strong> In viva, always speak in this order: (1) Problem, (2) Your module, (3) Data flow, (4) Why this design, (5) Limitations, (6) Future work.
+        Keep answers short and then offer details if asked.
+      </div>
+    </div>
+
+    <script>
+      function expandAll(){
+        document.querySelectorAll("details").forEach(d => d.open = true);
+      }
+      function collapseAll(){
+        document.querySelectorAll("details").forEach(d => d.open = false);
+      }
+    </script>
+  </body>
+</html>
+

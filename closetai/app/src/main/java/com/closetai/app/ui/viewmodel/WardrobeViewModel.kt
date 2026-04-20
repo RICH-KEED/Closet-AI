@@ -1,6 +1,5 @@
 package com.closetai.app.ui.viewmodel
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.closetai.app.data.model.WardrobeItem
@@ -9,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.File
 
 sealed class WardrobeUiState {
     object Loading : WardrobeUiState()
@@ -45,10 +45,10 @@ class WardrobeViewModel(
         }
     }
 
-    fun uploadItem(imageUri: Uri, category: String, color: String, onComplete: (Boolean) -> Unit) {
+    fun uploadItem(imageFile: File, category: String, color: String, onComplete: (Boolean) -> Unit) {
         viewModelScope.launch {
             _isUploading.value = true
-            val result = wardrobeRepository.uploadWardrobeItem(imageUri, category, color)
+            val result = wardrobeRepository.uploadWardrobeItem(imageFile, category, color)
             result.onSuccess {
                 fetchWardrobe() // Refresh list on success
                 _uploadMessage.value = "Uploaded to wardrobe"

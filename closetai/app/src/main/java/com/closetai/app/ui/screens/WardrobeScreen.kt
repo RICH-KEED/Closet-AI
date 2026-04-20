@@ -25,6 +25,7 @@ import coil.compose.AsyncImage
 import com.closetai.app.ui.theme.Primary
 import com.closetai.app.ui.viewmodel.WardrobeUiState
 import com.closetai.app.ui.viewmodel.WardrobeViewModel
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,15 +38,25 @@ fun WardrobeScreen(
     val uploadMessage by viewModel.uploadMessage.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     // Launcher for selecting an image from the gallery
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedImageFile by remember { mutableStateOf<File?>(null) }
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        selectedImageUri = uri
         if (uri != null) {
-            showAddDialog = true
+            try {
+                val dst = File(context.cacheDir, "wardrobe_${System.currentTimeMillis()}.jpg")
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    dst.outputStream().use { output -> input.copyTo(output) }
+                }
+                selectedImageFile = dst
+                showAddDialog = true
+            } catch (_: Exception) {
+                selectedImageFile = null
+                showAddDialog = false
+            }
         }
     }
 
@@ -175,14 +186,14 @@ fun WardrobeScreen(
         viewModel.consumeUploadMessage()
     }
 
-    if (showAddDialog && selectedImageUri != null) {
+    if (showAddDialog && selectedImageFile != null) {
         var category by remember { mutableStateOf("") }
         var color by remember { mutableStateOf("") }
 
         AlertDialog(
             onDismissRequest = {
                 showAddDialog = false
-                selectedImageUri = null
+                selectedImageFile = null
             },
             title = { Text("Add Wardrobe Item") },
             text = {
@@ -206,10 +217,10 @@ fun WardrobeScreen(
                 Button(
                     onClick = {
                         if (category.isNotBlank() && color.isNotBlank()) {
-                            viewModel.uploadItem(selectedImageUri!!, category, color) { success ->
+                            viewModel.uploadItem(selectedImageFile!!, category, color) { success ->
                                 if (success) {
                                     showAddDialog = false
-                                    selectedImageUri = null
+                                    selectedImageFile = null
                                 }
                             }
                         }
@@ -223,7 +234,7 @@ fun WardrobeScreen(
                 TextButton(
                     onClick = {
                         showAddDialog = false
-                        selectedImageUri = null
+                        selectedImageFile = null
                     }
                 ) {
                     Text("Cancel")

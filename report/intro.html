@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>StyleSense AI — Viva Intro Script</title>
+    <style>
+      :root{
+        --bg:#0b1020;
+        --card:#121a33;
+        --muted:#a9b4d0;
+        --text:#eef2ff;
+        --line:rgba(255,255,255,.10);
+        --shadow: 0 16px 40px rgba(0,0,0,.35);
+        --accent:#7c5cff;
+        --ok:#31c48d;
+        --warn:#faca15;
+        --bad:#fb7185;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+        background: radial-gradient(1200px 600px at 20% 0%, rgba(124,92,255,.35), transparent 55%),
+                    radial-gradient(900px 500px at 85% 10%, rgba(49,196,141,.22), transparent 60%),
+                    var(--bg);
+        color:var(--text);
+      }
+      .wrap{max-width:1000px;margin:0 auto;padding:30px 16px 60px}
+      header{
+        background: linear-gradient(180deg, rgba(124,92,255,.20), rgba(18,26,51,.15));
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 20px 18px;
+        box-shadow: var(--shadow);
+      }
+      h1{margin:0;font-size:24px}
+      .sub{margin:10px 0 0;color:var(--muted);line-height:1.55}
+      .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+      .pill{
+        border:1px solid var(--line);
+        background: rgba(255,255,255,.04);
+        padding:8px 10px;border-radius:999px;font-size:12.5px;color:var(--muted)
+      }
+      .grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:16px}
+      .card{
+        background: rgba(18,26,51,.85);
+        border:1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        padding: 16px;
+      }
+      h2{margin:0 0 10px;font-size:15px;letter-spacing:.3px;text-transform:uppercase;color:#dfe6ff}
+      ol,ul{margin:10px 0 0;padding-left:18px}
+      li{margin:7px 0;line-height:1.55}
+      code{
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 12.5px;
+        color: #e8e9ff;
+      }
+      .tag{
+        display:inline-block;
+        padding:3px 8px;
+        border-radius:999px;
+        border:1px solid var(--line);
+        background: rgba(255,255,255,.04);
+        color: var(--muted);
+        font-size:12px;
+        margin-left:8px;
+      }
+      .step{
+        border:1px solid var(--line);
+        border-radius: 14px;
+        padding: 12px;
+        background: rgba(255,255,255,.03);
+        margin-top: 10px;
+      }
+      .step strong{display:block;margin-bottom:6px}
+      .step span{color:var(--muted);display:block}
+      .callout{
+        border-left: 4px solid var(--accent);
+        padding: 10px 12px;
+        background: rgba(124,92,255,.10);
+        border-radius: 12px;
+        margin-top: 10px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+      .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+      button{
+        border:1px solid var(--line);
+        background: rgba(255,255,255,.05);
+        color:var(--text);
+        padding:10px 12px;border-radius:12px;
+        cursor:pointer;
+      }
+      button:hover{background: rgba(255,255,255,.07)}
+      @media print{
+        body{background:#fff;color:#000}
+        header,.card{box-shadow:none}
+        header,.card{border:1px solid #ddd}
+        .sub,.pill,.callout,.step span{color:#333}
+        button{display:none}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>“Explain your mini project” — Team Script (StyleSense AI)</h1>
+        <p class="sub">
+          Use this as a speaking sequence when the examiner asks: <strong>“Explain your mini project.”</strong>
+          Aim for <strong>2–3 minutes total</strong>. Keep it crisp, then go deeper only if asked.
+        </p>
+        <div class="row">
+          <div class="pill">Project: StyleSense AI (ClosetAI)</div>
+          <div class="pill">Android + FastAPI + Firebase/Firestore + Redis + Weather + HF Try-On</div>
+          <div class="pill">Order: Problem → Solution → Architecture → Demo flow → Results → Future</div>
+        </div>
+        <div class="btnrow">
+          <button onclick="window.print()">Print</button>
+          <button onclick="toggleTimers()">Show/Hide time cues</button>
+        </div>
+      </header>
+
+      <div class="grid">
+        <section class="card">
+          <h2>1) One person starts (30–40 seconds) <span class="tag timer">0:00–0:40</span></h2>
+          <div class="step">
+            <strong>Opening line (say exactly):</strong>
+            <span>
+              “Our mini project is <strong>StyleSense AI</strong>, a mobile fashion assistant that gives <strong>personalized outfit recommendations</strong>
+              using the user’s profile, wardrobe, and weather context, and it also provides an <strong>AI-based virtual try-on</strong> preview.”
+            </span>
+          </div>
+          <div class="step">
+            <strong>Problem (2 lines):</strong>
+            <span>
+              “Online fashion shopping has too many choices and low confidence due to fit/appearance uncertainty.
+              Existing recommendations often ignore body type, style, weather, and the user’s own wardrobe.”
+            </span>
+          </div>
+          <div class="step">
+            <strong>Solution (2 lines):</strong>
+            <span>
+              “We collect onboarding preferences, store profile/wardrobe in Firestore, fetch real products by scraping, rank them with our scoring engine,
+              and optionally generate virtual try-on using a hosted AI model.”
+            </span>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>2) Architecture overview (40–50 seconds) <span class="tag timer">0:40–1:30</span></h2>
+          <ol>
+            <li><strong>Android app (Compose):</strong> screens + ViewModels + repositories; uses Retrofit for backend calls.</li>
+            <li><strong>Backend (FastAPI):</strong> endpoints for recommendations, feedback, saved list, wardrobe image upload, try-on proxy.</li>
+            <li><strong>Firebase Auth + Firestore:</strong> UID-based user profile and wardrobe metadata storage.</li>
+            <li><strong>Redis:</strong> caches scraped candidates and feedback-aware ranked lists for fast “Load more”.</li>
+            <li><strong>External services:</strong> OpenWeatherMap for weather, Hugging Face Space (Gradio) for try-on.</li>
+          </ol>
+          <div class="callout">
+            If the examiner asks “Where is AI used?”, answer: <strong>Try-On is AI</strong> (hosted model), and <strong>recommendations are scored</strong>
+            using a multi-factor ranking engine (rule-based MatchScorer) suitable for cold-start.
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>3) Demo flow (50–60 seconds) <span class="tag timer">1:30–2:30</span></h2>
+          <ol>
+            <li><strong>Sign-in:</strong> Google sign-in via Firebase.</li>
+            <li><strong>Onboarding:</strong> gender, body type, measurements, skin tone, style/fit, occasion, budget, categories.</li>
+            <li><strong>Wardrobe:</strong> add photo → upload to backend (<code>/api/v1/wardrobe/upload</code>) → store URL + metadata in Firestore.</li>
+            <li><strong>Recommendations:</strong> Home context + Firestore profile → backend scrapes Myntra → ranks → paginates results.</li>
+            <li><strong>Feedback:</strong> like/dislike → stored in Redis → improves next ranking.</li>
+            <li><strong>Try-on:</strong> select garment + selfie → backend calls HF Space → returns base64 image → display + save to history.</li>
+          </ol>
+        </section>
+
+        <section class="card">
+          <h2>4) Results + limitations + future (20–30 seconds) <span class="tag timer">2:30–3:00</span></h2>
+          <ul>
+            <li><strong>Results:</strong> working end-to-end system with real product candidates, saved items, and try-on preview integration.</li>
+            <li><strong>Limitations:</strong> scraping can break if site HTML changes; try-on latency depends on HF Space cold-start and GPU availability.</li>
+            <li><strong>Future work:</strong> add more stores (AJIO/Amazon/H&amp;M), replace rule-based scoring with learning-to-rank, improve try-on quality/latency.</li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h2>5) Team handoff order (who says what)</h2>
+          <ul>
+            <li><strong>ABHINEET:</strong> App overview + demo steps + try-on UI integration + UX decisions.</li>
+            <li><strong>JAPJIT:</strong> Backend endpoints + how caching hash works + uploads + error handling.</li>
+            <li><strong>PRABHSIMRAN:</strong> Scraping pipeline + extracted fields + reliability issues + improvements.</li>
+            <li><strong>PANSHUL:</strong> Firebase Auth + Firestore schema/rules + why Redis is used for cache/feedback.</li>
+            <li><strong>RATIK:</strong> MatchScorer ranking features + weather + feedback-aware reranking + diversification/pagination.</li>
+          </ul>
+          <div class="callout">
+            Handoff sentence template: “Now <strong>[Name]</strong> will explain the <strong>[Module]</strong> in detail.”
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>6) If examiner asks “Explain in one line”</h2>
+          <div class="step">
+            <strong>One-liner:</strong>
+            <span>
+              “StyleSense AI is an Android fashion assistant that recommends real products using profile + wardrobe + weather and provides AI virtual try-on.”
+            </span>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      let timersVisible = true;
+      function toggleTimers(){
+        timersVisible = !timersVisible;
+        document.querySelectorAll(".timer").forEach(el => {
+          el.style.display = timersVisible ? "inline-block" : "none";
+        });
+      }
+    </script>
+  </body>
+</html>
+

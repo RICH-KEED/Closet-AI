@@ -1,5 +1,6 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from models import RecommendationRequest, ProductRecommendation, UserProfile, RecommendationFeedbackRequest, TryOnResponse
 from scrapers.myntra import MyntraScraper
 import hashlib
@@ -51,9 +52,51 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Static file serving for uploaded wardrobe images (avoids Firebase Storage).
+_BACKEND_DIR = os.path.dirname(__file__)
+UPLOADS_DIR = os.getenv("UPLOADS_DIR", os.path.join(_BACKEND_DIR, "uploads"))
+WARDROBE_UPLOAD_SUBDIR = "wardrobe"
+WARDROBE_UPLOAD_DIR = os.path.join(UPLOADS_DIR, WARDROBE_UPLOAD_SUBDIR)
+os.makedirs(WARDROBE_UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "environment": os.getenv("ENVIRONMENT", "development")}
+
+
+@app.post("/api/v1/wardrobe/upload")
+async def upload_wardrobe_image(request: Request, image: UploadFile = File(...)):
+    """
+    Upload wardrobe image to backend storage and return a public URL.
+    Android stores this URL inside Firestore as WardrobeItem.imageUrl.
+    """
+    content_type = (image.content_type or "").lower()
+    if not content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail=f"Expected image upload, got content_type={image.content_type}")
+
+    ext = os.path.splitext(image.filename or "")[1].lower()
+    if ext not in (".jpg", ".jpeg", ".png", ".webp"):
+        # default to jpg if unknown/missing
+        ext = ".jpg"
+
+    filename = f"{hashlib.sha256(os.urandom(32)).hexdigest()}{ext}"
+    dst_path = os.path.join(WARDROBE_UPLOAD_DIR, filename)
+
+    try:
+        data = await image.read()
+        if not data:
+            raise HTTPException(status_code=400, detail="Empty image upload")
+        with open(dst_path, "wb") as f:
+            f.write(data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save image: {e}")
+
+    base = str(request.base_url).rstrip("/")
+    url = f"{base}/uploads/{WARDROBE_UPLOAD_SUBDIR}/{filename}"
+    return {"status": "ok", "image_url": url}
 
 @app.get("/api/v1/scrapers/connectivity")
 async def scrapers_connectivity():

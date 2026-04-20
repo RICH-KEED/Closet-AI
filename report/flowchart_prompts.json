@@ -1,0 +1,98 @@
+{
+  "generator": {
+    "tool": "gemini",
+    "model_hint": "nano-banana",
+    "note": "These prompts are designed to generate clean flowchart/architecture images for the LaTeX report. Export each image as PNG with 300 DPI if possible."
+  },
+  "style": {
+    "visual_style": "clean academic flowchart, flat design, high contrast, consistent typography, no 3D, no gradients",
+    "canvas": "landscape A4 ratio, white background, thin dark gray borders, subtle light-gray grid optional",
+    "font": "Inter or Roboto, readable 12–16pt, bold for headings",
+    "colors": {
+      "android": "#4CAF50",
+      "backend": "#3B82F6",
+      "database": "#F59E0B",
+      "cache": "#A855F7",
+      "external_api": "#EF4444",
+      "ai": "#111827"
+    },
+    "rules": [
+      "Use standard flowchart symbols: rounded rectangles for processes, cylinders for databases, diamonds for decisions.",
+      "Use arrowheads and label arrows with short verbs (Send, Fetch, Store, Rank, Return).",
+      "Avoid tiny text; keep node count manageable; align to grid."
+    ]
+  },
+  "figures": [
+    {
+      "id": "fig1_system_architecture",
+      "output_filename": "fig1_system_architecture.png",
+      "title": "System Architecture of StyleSense AI",
+      "prompt": {
+        "version": "1.0",
+        "type": "image_generation",
+        "description": "Create a system architecture diagram for a project named 'StyleSense AI (ClosetAI)'. Use a white background and clean academic style.\n\nLayout: Left-to-right.\n\nLeft block (Android App) colored #4CAF50:\n- Big container labeled 'Android App (Kotlin + Jetpack Compose)'. Inside place smaller boxes:\n  1) 'UI Screens (Home, Wardrobe, Recommendations, Try-On, Saved, Settings)'\n  2) 'ViewModels'\n  3) 'Repositories'\n  4) 'Retrofit Client (ClosetAiApi)'\n  5) 'Firebase Auth (Google Sign-In)'\n  6) 'Firestore Client'\n\nMiddle block (Backend API) colored #3B82F6:\n- Container labeled 'FastAPI Backend (Python)'. Inside place boxes:\n  A) 'API Layer (Pydantic validation)'\n  B) 'Recommendation Service'\n  C) 'Wardrobe Upload Service'\n  D) 'Try-On Proxy Service'\n  E) 'Scraper Manager'\n\nRight-side blocks:\n- Database cylinder colored #F59E0B labeled 'Firestore (User Profile + Wardrobe Metadata)'\n- Cache cylinder colored #A855F7 labeled 'Redis (Candidate Cache + Feedback Sets + Ranked Cache)'\n- External API box colored #EF4444 labeled 'OpenWeatherMap API'\n- E-commerce source box colored #EF4444 labeled 'Myntra Website (Scraped)'\n- AI box colored #111827 labeled 'Hugging Face Space (Gradio Virtual Try-On)'\n- Storage box colored #3B82F6 labeled 'Static Uploads (/uploads)'\n\nArrows:\n- Android Retrofit Client -> FastAPI API Layer labeled 'HTTP JSON/multipart'\n- Android Firestore Client <-> Firestore labeled 'read/write profile + wardrobe'\n- FastAPI Recommendation Service <-> Redis labeled 'cache candidates + ranked results'\n- FastAPI Recommendation Service -> Scraper Manager -> Myntra labeled 'scrape candidates'\n- FastAPI Recommendation Service -> OpenWeatherMap labeled 'fetch weather'\n- FastAPI Wardrobe Upload Service -> Static Uploads labeled 'save image'\n- Static Uploads -> Android UI Screens labeled 'image_url'\n- FastAPI Try-On Proxy Service -> Hugging Face Space labeled 'predict (/tryon)'\n\nAdd a small legend bottom-right explaining colors: Android, Backend, DB, Cache, External APIs, AI.\n\nDo NOT include any code, only diagram."
+      }
+    },
+    {
+      "id": "fig2_recommendation_flow",
+      "output_filename": "fig2_recommendation_flow.png",
+      "title": "Recommendation Flow",
+      "prompt": {
+        "version": "1.0",
+        "type": "image_generation",
+        "description": "Create a flowchart titled 'Recommendation Flow (StyleSense AI)'. White background, clean academic style.\n\nFlow (top to bottom):\n1) Start terminator: 'User opens Home and requests recommendations'\n2) Process: 'Collect context: occasion, dress code, location (lat/lon)'\n3) Process: 'Load user profile + wardrobe from Firestore'\n4) Process: 'Build RecommendationRequest {user_profile, context, offset, limit}'\n5) Process: 'POST /api/v1/recommendations'\n6) Process (Backend): 'Create stable hash (profile + context + cache version)'\n7) Decision diamond: 'Cached candidates in Redis?'\n  - Yes -> Process: 'Load cached candidates'\n  - No -> Process: 'Scrape Myntra candidates' -> Process: 'Cache candidates in Redis'\n8) Decision diamond: 'lat/lon provided?'\n  - Yes -> Process: 'Fetch weather from OpenWeatherMap'\n  - No -> Process: 'Skip weather'\n9) Process: 'Load liked/disliked sets from Redis'\n10) Process: 'Rank using MatchScorer (style/color/brand + weather + feedback)'\n11) Process: 'Diversify + cap results (MAX_TOTAL, MAX_PER_PLATFORM)'\n12) Process: 'Slice page = results[offset:offset+limit]'\n13) Process: 'Return List<ProductRecommendation>'\n14) End terminator: 'Android displays grid + Load More'\n\nAdd side-note callouts (small dotted boxes) near steps 6, 10, 11:\n- Step 6: 'Stable cache keys improve performance'\n- Step 10: 'Explainability via match reasons'\n- Step 11: 'Avoid one platform dominating'\n\nColor-code Android steps in green, backend steps in blue, Redis in purple, weather API in red.\n\nDo NOT include code."
+      }
+    },
+    {
+      "id": "fig3_tryon_flow",
+      "output_filename": "fig3_tryon_flow.png",
+      "title": "Virtual Try-On Flow",
+      "prompt": {
+        "version": "1.0",
+        "type": "image_generation",
+        "description": "Create a flowchart titled 'Virtual Try-On Flow (StyleSense AI)'. White background, academic style.\n\nFlow (left to right):\nLeft column (Android, green):\n1) Start: 'User selects a garment from Recommendations'\n2) Process: 'User selects/uploads selfie'\n3) Process: 'Prepare multipart form-data: user_image + garment_image_url + params'\n4) Process: 'POST /api/v1/tryon'\n\nMiddle column (Backend, blue):\n5) Process: 'Validate TRYON_SPACE_ID configured'\n6) Process: 'Download garment image from URL'\n7) Process: 'Normalize images (resize/convert)'\n8) Process: 'Call HF Space via Gradio predict(/tryon)'\n9) Decision: 'Space error?'\n  - No -> go to step 10\n  - Yes -> Process: 'Retry once (optional fallback cloth image)' -> back to step 8\n10) Process: 'Read output image'\n11) Process: 'Encode base64'\n12) Process: 'Return TryOnResponse {status, image_base64}'\n\nRight column (Android, green):\n13) Process: 'Decode base64 -> bitmap'\n14) Process: 'Display result'\n15) Process: 'Store in local TryOnHistory'\n16) End: 'User can view Try-Ons screen'\n\nAdd small note box near step 8: 'Hosted AI avoids GPU infrastructure'.\nUse an AI icon near HF Space node (black color), label 'Hugging Face Space (Gradio)'.\n\nDo NOT include code."
+      }
+    },
+    {
+      "id": "fig4_onboarding_flow",
+      "output_filename": "fig4_onboarding_flow.png",
+      "title": "Onboarding Screen Flow",
+      "prompt": {
+        "version": "1.0",
+        "type": "image_generation",
+        "description": "Create an onboarding flow diagram titled 'Onboarding Flow (StyleSense AI)'. White background, clean academic style.\n\nUse a vertical step-by-step flow with numbered boxes (rounded rectangles) and arrows.\nSteps:\n1) 'Gender'\n2) 'Body Type'\n3) 'Size / Measurements'\n4) 'Skin Tone'\n5) 'Style Preferences'\n6) 'Fit Preferences'\n7) 'Occasion Preferences'\n8) 'Budget Range'\n9) 'Special Requirements'\n10) 'Clothing Categories'\n11) 'Profile Review'\n12) 'Save to Firestore'\n\nAdd side box labeled 'Why onboarding?' containing bullets:\n- 'Solves cold-start'\n- 'Enables fit-aware suggestions'\n- 'Improves explainability'\n\nColor onboarding boxes in green. Firestore cylinder in amber with arrow from step 12 to Firestore.\n\nDo NOT include code."
+      }
+    },
+    {
+      "id": "fig5_wardrobe_upload_flow",
+      "output_filename": "fig5_wardrobe_upload_flow.png",
+      "title": "Wardrobe Upload Flow",
+      "prompt": {
+        "version": "1.0",
+        "type": "image_generation",
+        "description": "Create a flowchart titled 'Wardrobe Upload Flow (StyleSense AI)'. White background, academic style.\n\nFlow (top to bottom):\n1) Start: 'User opens Wardrobe screen'\n2) Process: 'Tap + (Add Item)'\n3) Process: 'Pick image (camera/gallery)'\n4) Process: 'Enter metadata: category, color'\n5) Process: 'POST /api/v1/wardrobe/upload (multipart image)'\n6) Process (Backend): 'Validate image type'\n7) Process (Backend): 'Save file to /uploads/wardrobe'\n8) Process (Backend): 'Return image_url'\n9) Process (Android): 'Create WardrobeItem {imageUrl, category, color, addedAt}'\n10) Process (Android): 'Store WardrobeItem in Firestore users/{uid}/wardrobe'\n11) End: 'Wardrobe grid updates'\n\nAdd a small Firestore cylinder node and a Static Uploads node.\nColor Android nodes green, backend nodes blue, Firestore amber, uploads blue.\n\nDo NOT include code."
+      }
+    },
+    {
+      "id": "fig6_recommendation_dataflow",
+      "output_filename": "fig6_recommendation_dataflow.png",
+      "title": "Recommendation Data Flow",
+      "prompt": {
+        "version": "1.0",
+        "type": "image_generation",
+        "description": "Create a data-flow diagram titled 'Recommendation Data Flow (StyleSense AI)'. White background, academic style.\n\nMake it look like DFD level-1.\nEntities/processes:\n- External Entity (green): 'User'\n- Process (green): 'Android UI'\n- Data Store (amber cylinder): 'Firestore (Profile + Wardrobe)'\n- Process (blue): 'FastAPI Recommendation Endpoint'\n- Process (blue): 'Scraper (Myntra)'\n- Data Store (purple cylinder): 'Redis Cache'\n- External API (red): 'OpenWeatherMap'\n- Process (blue): 'MatchScorer Ranker'\n\nArrows (label each):\n- User -> Android UI: 'preferences + context'\n- Android UI <-> Firestore: 'read/write profile & wardrobe'\n- Android UI -> FastAPI: 'RecommendationRequest'\n- FastAPI -> Redis Cache: 'get/set candidates + ranked list'\n- FastAPI -> Scraper: 'scrape query'\n- Scraper -> FastAPI: 'candidate products'\n- FastAPI -> OpenWeatherMap: 'weather request'\n- OpenWeatherMap -> FastAPI: 'weather response'\n- FastAPI -> MatchScorer: 'candidates + profile + weather + feedback'\n- MatchScorer -> FastAPI: 'ranked results'\n- FastAPI -> Android UI: 'List<ProductRecommendation>'\n- Android UI -> User: 'display recommendations'\n\nAdd small note box: 'Feedback stored in Redis updates ranking version'.\n\nDo NOT include code."
+      }
+    },
+    {
+      "id": "fig7_tryon_flow_detailed",
+      "output_filename": "fig7_tryon_flow_detailed.png",
+      "title": "Try-On Flow (Detailed)",
+      "prompt": {
+        "version": "1.0",
+        "type": "image_generation",
+        "description": "Create a detailed flowchart titled 'Try-On Flow (Detailed) — StyleSense AI'. White background, academic style.\n\nInclude swimlanes (horizontal lanes):\n- Lane 1: 'Android App'\n- Lane 2: 'FastAPI Backend'\n- Lane 3: 'External Services'\n\nSteps in Android lane:\nA1) 'Select garment'\nA2) 'Select selfie'\nA3) 'POST /api/v1/tryon (selfie + garment_url)'\nA4) 'Receive base64 image'\nA5) 'Decode + display'\nA6) 'Save to TryOnHistory'\n\nSteps in Backend lane:\nB1) 'Validate env: TRYON_SPACE_ID'\nB2) 'Fetch garment image bytes (http client)'\nB3) 'Normalize images (resize/convert)'\nB4) 'Call gradio_client predict(/tryon)'\nB5) Decision diamond: 'Error from Space?'\n  - Yes: 'Retry once (sleep/backoff)'\n  - Yes (still fails): 'Return 502'\n  - No: continue\nB6) 'Read output image'\nB7) 'Return base64'\n\nExternal services lane:\nE1) 'Garment Image URL (CDN/web)'\nE2) 'Hugging Face Space (Gradio)'\n\nArrows:\n- Backend B2 reads from E1.\n- Backend B4 communicates with E2.\n\nAdd note: 'Main limitation: Space cold-start latency'.\nUse consistent colors (Android green, backend blue, external red, AI black).\n\nDo NOT include code."
+      }
+    }
+  ]
+}
+
