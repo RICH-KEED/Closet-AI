@@ -163,6 +163,11 @@ fun NavGraph(
                     navController.navigate(Screen.OnboardingComplete.route) {
                         popUpTo(Screen.Gender.route) { inclusive = false }
                     }
+                },
+                onSkip = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Gender.route) { inclusive = true }
+                    }
                 }
             )
         }

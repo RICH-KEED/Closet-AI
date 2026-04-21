@@ -51,8 +51,13 @@ fun WardrobeScreen(
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     dst.outputStream().use { output -> input.copyTo(output) }
                 }
-                selectedImageFile = dst
-                showAddDialog = true
+                if (dst.exists() && dst.length() > 0) {
+                    selectedImageFile = dst
+                    showAddDialog = true
+                } else {
+                    selectedImageFile = null
+                    showAddDialog = false
+                }
             } catch (_: Exception) {
                 selectedImageFile = null
                 showAddDialog = false

@@ -16,6 +16,7 @@
 \usepackage{longtable}
 \usepackage{titlesec}
 \usepackage{caption}
+\usepackage{subcaption}   % side-by-side sub-figures (for screenshot pairs)
 \usepackage{fancyhdr}
 \usepackage{parskip}        % space between paragraphs instead of indent
 \usepackage{microtype}      % better line-breaking / justification
@@ -48,10 +49,52 @@
 \cfoot{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
-% ── Chapter title style ──────────────────────────────────────
+% ── Chapter title style (centered) ───────────────────────────
 \titleformat{\chapter}[display]
-  {\normalfont\bfseries\LARGE}{CHAPTER \thechapter.}{10pt}{\LARGE}
+  {\normalfont\bfseries\LARGE\centering}{CHAPTER \thechapter.}{10pt}{\LARGE\centering}
 \titlespacing*{\chapter}{0pt}{20pt}{20pt}
+
+% ── Portrait screenshot helpers ───────────────────────────────
+% Both commands auto-render the image if the PNG exists, or show a
+% placeholder box if the file is missing.
+% \screenshotholder  — for 2-up pairs  (tall, ~50% page height)
+% \screenshotsmall   — for 3-up rows   (shorter, ~42% page height)
+
+\newcommand{\screenshotholder}[2]{%
+  \IfFileExists{figures/screenshots/#2}{%
+    \includegraphics[height=0.50\textheight,keepaspectratio]%
+      {figures/screenshots/#2}%
+  }{%
+    \setlength{\fboxsep}{0pt}%
+    \fbox{%
+      \begin{minipage}[c][0.50\textheight][c]{0.26\textwidth}%
+        \centering\small
+        \textit{[SCREENSHOT MISSING]}\\[6pt]
+        \textbf{#1}\\[4pt]
+        {\ttfamily\footnotesize #2}\\[4pt]
+        {\tiny Upload to figures/screenshots/}
+      \end{minipage}%
+    }%
+  }%
+}
+
+\newcommand{\screenshotsmall}[2]{%
+  \IfFileExists{figures/screenshots/#2}{%
+    \includegraphics[height=0.42\textheight,keepaspectratio]%
+      {figures/screenshots/#2}%
+  }{%
+    \setlength{\fboxsep}{0pt}%
+    \fbox{%
+      \begin{minipage}[c][0.42\textheight][c]{0.22\textwidth}%
+        \centering\small
+        \textit{[SCREENSHOT MISSING]}\\[6pt]
+        \textbf{#1}\\[4pt]
+        {\ttfamily\footnotesize #2}\\[4pt]
+        {\tiny figures/screenshots/}
+      \end{minipage}%
+    }%
+  }%
+}
 
 % ── Consistent table spacing ─────────────────────────────────
 \setlength{\tabcolsep}{7pt}
@@ -114,9 +157,17 @@
 \end{titlepage}
 
 % =========================================================
-% ABSTRACT
+% FRONT MATTER (roman page numbers)
 % =========================================================
 \pagenumbering{roman}
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+% =========================================================
+% ABSTRACT  (placed after contents, as requested)
+% =========================================================
 \chapter*{ABSTRACT}
 \addcontentsline{toc}{chapter}{ABSTRACT}
 
@@ -127,10 +178,6 @@ Modern fashion e-commerce overwhelms users with thousands of product choices whi
 User identity and profile data (collected through a 10-step onboarding flow) are persisted in Firebase Firestore. Weather-aware suggestions are powered by the OpenWeatherMap API using the device's GPS coordinates.
 
 This report documents the project motivation, a review of relevant literature, the complete design flow and module architecture, implementation results for each module, and future directions such as expanding to multi-store scraping and learning-based ranking.
-
-\tableofcontents
-\listoffigures
-\listoftables
 
 % =========================================================
 % LIST OF STANDARDS
@@ -634,6 +681,39 @@ An \textbf{iterative, module-first methodology} was followed:
 \label{fig:onboarding}
 \end{figure}
 
+% ── SCREENSHOTS: 3 onboarding steps side-by-side ──────────
+% Take these screenshots on the running app:
+%   screen_ob_gender.png   — Step 1: Gender selection screen
+%   screen_ob_style.png    — Step 5: Style Preferences screen
+%   screen_ob_budget.png   — Step 8: Budget Range screen
+% Save to: report/figures/screenshots/
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.30\textwidth}
+  \centering
+  \screenshotsmall{Step 1: Gender}{screen\_ob\_gender.png}
+  \caption{Gender selection}
+  \label{fig:ss_ob1}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.30\textwidth}
+  \centering
+  \screenshotsmall{Step 5: Style}{screen\_ob\_style.png}
+  \caption{Style preferences}
+  \label{fig:ss_ob2}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.30\textwidth}
+  \centering
+  \screenshotsmall{Step 8: Budget}{screen\_ob\_budget.png}
+  \caption{Budget range}
+  \label{fig:ss_ob3}
+\end{subfigure}
+\caption{Sample onboarding screens: gender, style preferences, and budget}
+\label{fig:ss_onboarding}
+\end{figure}
+
 \FloatBarrier
 
 \subsection{Authentication Module}
@@ -641,6 +721,35 @@ An \textbf{iterative, module-first methodology} was followed:
 \textbf{Purpose:} Establish a secure, verified user identity that links the Android app, Firestore data, and backend Redis feedback.
 
 \textbf{Implementation:} Google Sign-In is implemented using Android's Credential Manager API, which presents a bottom sheet for account selection without leaving the app. Firebase Auth processes the credential and returns a UID. A listener on \texttt{SplashScreen} checks whether the user is already signed in (skip onboarding) or is new (route to onboarding). The UID is included in every recommendation and feedback API request so the backend can retrieve the correct Redis feedback sets.
+
+% ── SCREENSHOT: Splash + Sign-In ──────────────────────────
+% Take these screenshots on your physical device or emulator:
+%   screen_splash.png  — App launch / animated splash screen
+%   screen_signin.png  — Sign-In screen showing the Google button
+% Save them to: report/figures/screenshots/
+% Then replace each \screenshotholder{}{} line with:
+%   \includegraphics[width=0.315\textwidth]{figures/screenshots/FILENAME.png}
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.46\textwidth}
+  \centering
+  \screenshotholder{Splash Screen}{screen\_splash.png}
+  \caption{Splash / launch screen}
+  \label{fig:ss_splash}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.46\textwidth}
+  \centering
+  \screenshotholder{Sign-In Screen}{screen\_signin.png}
+  \caption{Google Sign-In screen}
+  \label{fig:ss_signin}
+\end{subfigure}
+\caption{Authentication screens: splash and Google sign-in}
+\label{fig:ss_auth}
+\end{figure}
+
+\FloatBarrier
 
 \subsection{Wardrobe Module}
 
@@ -653,6 +762,31 @@ An \textbf{iterative, module-first methodology} was followed:
 \includegraphics[width=0.88\textwidth]{figures/fig5_wardrobe_upload_flow.png}
 \caption{Wardrobe Upload Flow: Android $\rightarrow$ Backend $\rightarrow$ Firestore}
 \label{fig:wardrobe}
+\end{figure}
+
+% ── SCREENSHOTS: Wardrobe ──────────────────────────────────
+% Take these screenshots:
+%   screen_wardrobe_grid.png  — Wardrobe screen showing your clothing grid
+%   screen_wardrobe_add.png   — The "Add Item" dialog (category + colour fields)
+% Save to: report/figures/screenshots/
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.46\textwidth}
+  \centering
+  \screenshotholder{Wardrobe Grid}{screen\_wardrobe\_grid.png}
+  \caption{Wardrobe grid view}
+  \label{fig:ss_ward1}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.46\textwidth}
+  \centering
+  \screenshotholder{Add Item Dialog}{screen\_wardrobe\_add.png}
+  \caption{Add wardrobe item}
+  \label{fig:ss_ward2}
+\end{subfigure}
+\caption{Wardrobe screen: grid of owned items and add-item dialog}
+\label{fig:ss_wardrobe}
 \end{figure}
 
 \FloatBarrier
@@ -677,6 +811,31 @@ An \textbf{iterative, module-first methodology} was followed:
 \label{fig:recdata}
 \end{figure}
 
+% ── SCREENSHOTS: Home + Recommendations ───────────────────
+% Take these screenshots:
+%   screen_home.png   — Home screen showing occasion/dress-code fields + Get Recs button
+%   screen_recs.png   — Recommendations grid with product cards (at least 4 visible)
+% Save to: report/figures/screenshots/
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.46\textwidth}
+  \centering
+  \screenshotholder{Home Screen}{screen\_home.png}
+  \caption{Home: context input}
+  \label{fig:ss_home}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.46\textwidth}
+  \centering
+  \screenshotholder{Recommendations Grid}{screen\_recs.png}
+  \caption{Recommendations grid}
+  \label{fig:ss_recs}
+\end{subfigure}
+\caption{Recommendation flow: Home context screen and resulting product grid}
+\label{fig:ss_rec_screens}
+\end{figure}
+
 \FloatBarrier
 
 \subsection{Virtual Try-On Module}
@@ -692,6 +851,31 @@ An \textbf{iterative, module-first methodology} was followed:
 \label{fig:tryondetail}
 \end{figure}
 
+% ── SCREENSHOTS: Try-On ───────────────────────────────────
+% Take these screenshots:
+%   screen_tryon_select.png — Recommendations screen with "Try On" button visible
+%   screen_tryon_result.png — The generated try-on image displayed full-screen
+% Save to: report/figures/screenshots/
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.46\textwidth}
+  \centering
+  \screenshotholder{Try-On Button}{screen\_tryon\_select.png}
+  \caption{Try-On button on product}
+  \label{fig:ss_tryon1}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.46\textwidth}
+  \centering
+  \screenshotholder{Try-On Result}{screen\_tryon\_result.png}
+  \caption{Generated try-on image}
+  \label{fig:ss_tryon2}
+\end{subfigure}
+\caption{Virtual try-on: garment selection and AI-generated result}
+\label{fig:ss_tryon_screens}
+\end{figure}
+
 \FloatBarrier
 
 \subsection{Feedback and Saved Items Module}
@@ -699,6 +883,33 @@ An \textbf{iterative, module-first methodology} was followed:
 \textbf{Purpose:} Create a feedback loop so that user preferences improve recommendations over time without requiring a full re-scrape.
 
 \textbf{Implementation:} When a user taps Like or Dislike on a recommendation card, the app POSTs to \texttt{/api/v1/recommendations/feedback}. The backend stores the product ID in a Redis set keyed to the user's UID (liked set or disliked set) and increments a feedback version counter. On the next recommendation request, the ranked-list cache key includes the feedback version, so a changed version triggers a fresh re-ranking run (with nudged scores) while still reusing the cached scraped candidates. Liked items also have their snapshot (title, brand, image URL, price) stored in a Redis hash for retrieval by the Saved screen via \texttt{GET /api/v1/recommendations/saved/\{uid\}}.
+
+% ── SCREENSHOTS: Like feedback + Saved screen ─────────────
+% Take these screenshots:
+%   screen_like.png   — Recommendations screen with a thumbs-up tapped (heart/like highlighted)
+%   screen_saved.png  — Saved screen showing liked product cards
+% Save to: report/figures/screenshots/
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.46\textwidth}
+  \centering
+  \screenshotholder{Like on Product}{screen\_like.png}
+  \caption{Tapping Like on a product}
+  \label{fig:ss_like}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.46\textwidth}
+  \centering
+  \screenshotholder{Saved Items Screen}{screen\_saved.png}
+  \caption{Saved / liked items list}
+  \label{fig:ss_saved}
+\end{subfigure}
+\caption{Feedback loop: liking a product and viewing saved items}
+\label{fig:ss_feedback_screens}
+\end{figure}
+
+\FloatBarrier
 
 \subsection{Quantitative Summary}
 
@@ -817,7 +1028,16 @@ OpenWeather Ltd. (2024). OpenWeatherMap API Documentation. \url{https://openweat
 
 \chapter{Plagiarism Report}
 
-Attach the plagiarism report generated by your institute's approved tool (e.g., Turnitin, iThenticate, Urkund). The report should show a similarity index below the acceptable threshold set by your department.
+The plagiarism check was performed using an online tool cross-verified by Originality.ai, Scribbr, and GPTZero.
+The result shows an \textbf{average plagiarism level of 9\%} (3\% minor changes, 4\% identical), which is well
+within the acceptable threshold for a minor project report.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.68\textwidth]{figures/PlagReport.png}
+\caption{Plagiarism Report --- Average similarity 9\% (Originality.ai / Scribbr / GPTZero)}
+\label{fig:plagreport}
+\end{figure}
 
 \chapter{Design Checklist}
 
