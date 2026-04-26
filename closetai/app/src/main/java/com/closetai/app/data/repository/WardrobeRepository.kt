@@ -16,6 +16,19 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 
+// OkHttp rejects wildcard media types (image + "/*") for multipart parts; use a concrete MIME.
+private fun guessImageMediaType(file: File): okhttp3.MediaType? {
+    val ext = file.name.substringAfterLast('.', "").lowercase()
+    val mime = when (ext) {
+        "jpg", "jpeg" -> "image/jpeg"
+        "png" -> "image/png"
+        "webp" -> "image/webp"
+        "gif" -> "image/gif"
+        else -> "image/jpeg"
+    }
+    return mime.toMediaTypeOrNull()
+}
+
 class WardrobeRepository {
 
     private val auth = FirebaseAuth.getInstance()
@@ -34,12 +47,18 @@ class WardrobeRepository {
 
         return try {
             Log.i(tag, "Uploading wardrobe item to backend: file=${imageFile.absolutePath} bytes=${imageFile.length()}")
-            val mediaType = "image/*".toMediaTypeOrNull()
+            val mediaType = guessImageMediaType(imageFile)
             val body = imageFile.asRequestBody(mediaType)
             val part = MultipartBody.Part.createFormData("image", imageFile.name, body)
             val response = api.uploadWardrobeImage(part)
             if (!response.isSuccessful) {
-                return Result.failure(Exception("Backend upload failed: ${response.code()} ${response.message()}"))
+                val detail = response.errorBody()?.use { it.string() }?.take(400)
+                val msg = buildString {
+                    append("Backend upload failed: HTTP ${response.code()}")
+                    if (!detail.isNullOrBlank()) append(" — ").append(detail)
+                    else append(" ").append(response.message())
+                }
+                return Result.failure(Exception(msg))
             }
             val upload = response.body()
                 ?: return Result.failure(Exception("Backend upload failed: response body is null"))
