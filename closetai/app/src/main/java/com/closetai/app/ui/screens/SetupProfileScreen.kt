@@ -36,7 +36,9 @@ import com.closetai.app.data.repository.UserRepository
 import com.closetai.app.data.repository.WardrobeRepository
 import com.closetai.app.data.settings.ServerConfigStore
 import com.closetai.app.data.settings.UserProfileCacheStore
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
 
 @Composable
 fun SetupProfileScreen(
@@ -53,9 +55,35 @@ fun SetupProfileScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var retryNonce by remember { mutableStateOf(0) }
     var serverUrl by remember { mutableStateOf("") }
+    var showServerConfig by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         serverUrl = ServerConfigStore.getBaseUrl(context)?.trim().orEmpty()
+    }
+
+    fun normalizeForSaving(input: String): String {
+        val trimmed = input.trim()
+        if (trimmed.isBlank()) return ""
+        val withScheme = if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+            trimmed
+        } else {
+            "http://$trimmed"
+        }
+        return if (withScheme.endsWith("/")) withScheme else "$withScheme/"
+    }
+
+    fun saveServerUrlAndRetry() {
+        val normalized = normalizeForSaving(serverUrl)
+        if (normalized.isBlank()) {
+            error = "Please enter a valid server URL or IP (example: 192.168.1.10:8081)"
+            showServerConfig = true
+            return
+        }
+        ServerConfigStore.setBaseUrl(context, normalized)
+        ApiClient.configureBaseUrl(normalized)
+        serverUrl = normalized
+        error = null
+        retryNonce += 1
     }
 
     suspend fun warmup(): Boolean {
@@ -71,8 +99,16 @@ fun SetupProfileScreen(
         }
 
         statusText = "Preparing your wardrobe…"
-        val wardrobeResult = wardrobeRepository.fetchWardrobeItems()
-        val wardrobeItems = wardrobeResult.getOrDefault(emptyList())
+        val wardrobeItems = try {
+            withTimeout(12_000) {
+                val wardrobeResult = wardrobeRepository.fetchWardrobeItems()
+                wardrobeResult.getOrDefault(emptyList())
+            }
+        } catch (_: TimeoutCancellationException) {
+            emptyList()
+        } catch (_: Exception) {
+            emptyList()
+        }
 
         val backendProfile = user.toBackendUserProfile(wardrobeItems)
         UserProfileCacheStore.setBackendProfile(context, backendProfile)
@@ -87,7 +123,15 @@ fun SetupProfileScreen(
 
         // Retry once in case scraping/network hiccups during demo.
         repeat(2) { attempt ->
-            val result = recommenderRepository.getRecommendations(request)
+            val result = try {
+                withTimeout(18_000) {
+                    recommenderRepository.getRecommendations(request)
+                }
+            } catch (_: TimeoutCancellationException) {
+                Result.failure(Exception("Request timed out. Check your server URL/IP and that the backend is running."))
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
             val ok = result.isSuccess && (result.getOrNull()?.isNotEmpty() == true)
             if (ok) {
                 isLoading = false
@@ -96,14 +140,23 @@ fun SetupProfileScreen(
             if (attempt == 0) delay(900)
         }
 
-        error = "Still setting things up. Please try again."
+        error = "Couldn't reach the backend. Set your server URL/IP and retry."
+        showServerConfig = true
         isLoading = false
         return false
     }
 
     LaunchedEffect(retryNonce) {
+        showServerConfig = false
         val ok = warmup()
         if (ok) onReady()
+    }
+
+    // If we're "stuck" loading for a while, proactively show server config.
+    LaunchedEffect(isLoading, statusText) {
+        if (!isLoading) return@LaunchedEffect
+        delay(7_000)
+        if (isLoading) showServerConfig = true
     }
 
     Column(
@@ -130,14 +183,8 @@ fun SetupProfileScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        error?.let { msg ->
+        if (showServerConfig) {
             Spacer(modifier = Modifier.height(18.dp))
-            Text(
-                text = msg,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error
-            )
-            Spacer(modifier = Modifier.height(20.dp))
             HorizontalDivider()
             Spacer(modifier = Modifier.height(16.dp))
             Text(
@@ -166,21 +213,27 @@ fun SetupProfileScreen(
             Spacer(modifier = Modifier.height(12.dp))
             Button(
                 enabled = !isLoading,
-                onClick = {
-                    val url = serverUrl.trim().let {
-                        val withScheme = if (it.startsWith("http://") || it.startsWith("https://")) it else "http://$it"
-                        if (withScheme.endsWith("/")) withScheme else "$withScheme/"
-                    }
-                    ServerConfigStore.setBaseUrl(context, url)
-                    ApiClient.configureBaseUrl(url)
-                    serverUrl = url
-                    error = null
-                    retryNonce += 1
-                },
+                onClick = { saveServerUrlAndRetry() },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Save & Retry")
             }
+            Spacer(modifier = Modifier.height(4.dp))
+            TextButton(
+                onClick = onSkip,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Skip for now")
+            }
+        }
+
+        error?.let { msg ->
+            Spacer(modifier = Modifier.height(18.dp))
+            Text(
+                text = msg,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Button(
                 enabled = !isLoading,
@@ -191,13 +244,6 @@ fun SetupProfileScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Retry")
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            TextButton(
-                onClick = onSkip,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Skip for now")
             }
         }
     }

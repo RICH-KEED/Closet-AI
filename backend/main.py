@@ -65,19 +65,27 @@ async def health_check():
     return {"status": "ok", "environment": os.getenv("ENVIRONMENT", "development")}
 
 
+def _bytes_look_like_image(data: bytes) -> bool:
+    """Accept octet-stream uploads when bytes are clearly JPEG/PNG/WebP."""
+    if len(data) < 12:
+        return False
+    if data[:3] == b"\xff\xd8\xff":
+        return True
+    if data[:8] == b"\x89PNG\r\n\x1a\n":
+        return True
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return True
+    return False
+
+
 @app.post("/api/v1/wardrobe/upload")
 async def upload_wardrobe_image(request: Request, image: UploadFile = File(...)):
     """
     Upload wardrobe image to backend storage and return a public URL.
     Android stores this URL inside Firestore as WardrobeItem.imageUrl.
     """
-    content_type = (image.content_type or "").lower()
-    if not content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail=f"Expected image upload, got content_type={image.content_type}")
-
     ext = os.path.splitext(image.filename or "")[1].lower()
     if ext not in (".jpg", ".jpeg", ".png", ".webp"):
-        # default to jpg if unknown/missing
         ext = ".jpg"
 
     filename = f"{hashlib.sha256(os.urandom(32)).hexdigest()}{ext}"
@@ -87,6 +95,15 @@ async def upload_wardrobe_image(request: Request, image: UploadFile = File(...))
         data = await image.read()
         if not data:
             raise HTTPException(status_code=400, detail="Empty image upload")
+        content_type = (image.content_type or "").lower().strip()
+        looks_image = content_type.startswith("image/")
+        if not looks_image and content_type in ("application/octet-stream", "binary/octet-stream", ""):
+            looks_image = _bytes_look_like_image(data)
+        if not looks_image:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Expected image upload, got content_type={image.content_type!r}",
+            )
         with open(dst_path, "wb") as f:
             f.write(data)
     except HTTPException:
@@ -94,7 +111,11 @@ async def upload_wardrobe_image(request: Request, image: UploadFile = File(...))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save image: {e}")
 
-    base = str(request.base_url).rstrip("/")
+    public_base = (os.getenv("PUBLIC_BASE_URL") or "").strip().rstrip("/")
+    if public_base:
+        base = public_base
+    else:
+        base = str(request.base_url).rstrip("/")
     url = f"{base}/uploads/{WARDROBE_UPLOAD_SUBDIR}/{filename}"
     return {"status": "ok", "image_url": url}
 
