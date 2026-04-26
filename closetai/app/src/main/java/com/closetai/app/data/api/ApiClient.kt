@@ -7,7 +7,9 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private const val DEFAULT_BASE_URL = "http://10.0.2.2:8081/"
+    // Default to the VPS backend so onboarding works out-of-the-box on physical devices.
+    // Can still be overridden in Settings (ServerConfigStore).
+    private const val DEFAULT_BASE_URL = "http://20.197.12.145:8081/"
 
     @Volatile
     private var baseUrl: String = DEFAULT_BASE_URL

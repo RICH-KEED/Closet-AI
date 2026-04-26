@@ -1,0 +1,21 @@
+[Unit]
+Description=ClosetAI FastAPI backend
+After=network.target
+
+[Service]
+Type=simple
+User=closetai
+Group=closetai
+WorkingDirectory=/opt/closetai/backend
+EnvironmentFile=/etc/closetai/backend.env
+ExecStart=/opt/closetai/backend/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8082
+Restart=always
+RestartSec=2
+
+# Hardening (safe defaults)
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+
